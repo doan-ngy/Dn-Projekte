@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lernkartei – Deutscher Pass</title>
+<style>
+  :root {
+    --black: #1a1a1a;
+    --red: #cc3333;
+    --gold: #b8860b;
+    --bg: #faf8f5;
+    --card-bg: #ffffff;
+    --muted: #6b6b6b;
+    --green: #2e7d32;
+    --orange: #b45309;
+    --border: #e5e0d8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--black);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--black);
+    color: #fff;
+    padding: 18px 20px 14px;
+    text-align: center;
+    border-bottom: 4px solid var(--red);
+  }
+  header h1 {
+    margin: 0 0 2px;
+    font-size: 1.25rem;
+    letter-spacing: 0.3px;
+  }
+  header .sub { font-size: 0.85rem; opacity: 0.85; }
+  header .stripe {
+    display: flex;
+    height: 4px;
+    width: 100%;
+    max-width: 240px;
+    margin: 10px auto 0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  header .stripe span { flex: 1; }
+  header .stripe .b { background: #1a1a1a; }
+  header .stripe .r { background: #cc3333; }
+  header .stripe .g { background: #d4af37; }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+  }
+
+  .progress-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .progress-bar-bg {
+    height: 8px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  select, button.tool-btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--black);
+    cursor: pointer;
+  }
+  select { flex: 1; min-width: 150px; }
+  button.tool-btn:hover { background: #f0ede7; }
+  button.tool-btn.active { background: var(--black); color: #fff; border-color: var(--black); }
+
+  .card-count {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .flash-outer {
+    perspective: 1200px;
+    margin-bottom: 16px;
+  }
+  .flashcard {
+    position: relative;
+    min-height: 280px;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    cursor: pointer;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 14px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+    overflow-y: auto;
+  }
+  .face.front {
+    background: var(--card-bg);
+  }
+  .face.back {
+    background: #fffaf0;
+    transform: rotateY(180deg);
+    border-color: #e8dcb8;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .tag {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--red);
+    font-weight: 700;
+  }
+  .badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: #f6f3ee;
+    text-transform: uppercase;
+  }
+  .badge.p-Häufig { background: #fdecec; color: #a02020; border-color: #f2c9c9; }
+  .badge.p-Mittel { background: #fff4e0; color: #8a5a00; border-color: #f0dcb8; }
+  .badge.p-Selten { background: #eef0f2; color: #55606b; border-color: #dde2e6; }
+  .badge.l-Grund  { background: #e9f4ea; color: #245c28; border-color: #cbe3cd; }
+  .badge.l-Mittel { background: #e8eef7; color: #24457c; border-color: #cad8ec; }
+  .badge.l-Fort   { background: #f0e9f7; color: #4d2a7c; border-color: #dbcdec; }
+
+  .q-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .a-text {
+    font-size: 1.0rem;
+    line-height: 1.5;
+  }
+  .hint {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--orange);
+    background: #fff3e0;
+    border-left: 3px solid var(--orange);
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+  .flip-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+  }
+  .btn-nav {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--black);
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .btn-again { background: var(--red); }
+  .btn-know { background: var(--green); }
+
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .done-screen {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .done-screen h2 { margin-top: 0; }
+
+  footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 10px 20px 30px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 420px) {
+    .flashcard { min-height: 320px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🇩🇪 Lernkartei – Deutscher Pass</h1>
+  <div class="sub">Einbürgerungstest &amp; Bekenntnisgespräch · Stand 14.08.2026</div>
+  <div class="stripe"><span class="b"></span><span class="r"></span><span class="g"></span></div>
+</header>
+
+<main>
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span id="progressLabel">0 / 0 gelernt</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="controls">
+    <select id="categoryFilter"></select>
+    <select id="prioFilter"></select>
+    <select id="levelFilter"></select>
+  </div>
+  <div class="controls">
+    <button class="tool-btn" id="openOnlyBtn">◎ Nur offene Karten</button>
+    <button class="tool-btn" id="shuffleBtn">🔀 Mischen</button>
+    <button class="tool-btn" id="resetBtn">↺ Zurücksetzen</button>
+  </div>
+
+  <div class="card-count" id="cardCount"></div>
+
+  <div id="studyArea">
+    <div class="flash-outer">
+      <div class="flashcard" id="flashcard">
+        <div class="face front">
+          <div class="meta">
+            <span class="tag" id="tagFront">Kategorie</span>
+            <span class="badge" id="prioFront">–</span>
+            <span class="badge" id="levelFront">–</span>
+          </div>
+          <div class="q-text" id="questionText">Frage</div>
+        </div>
+        <div class="face back">
+          <div class="meta">
+            <span class="tag" id="tagBack">Kategorie</span>
+          </div>
+          <div class="a-text" id="answerText">Antwort</div>
+          <div class="hint" id="hintBox" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flip-hint">Karte antippen zum Umdrehen · Leertaste = drehen, ← → = blättern</div>
+
+    <div class="actions">
+      <button class="btn-again" id="againBtn">✗ Nochmal üben</button>
+      <button class="btn-know" id="knowBtn">✓ Weiß ich</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-nav" id="prevBtn">← Zurück</button>
+      <button class="btn-nav" id="nextBtn">Weiter →</button>
+    </div>
+  </div>
+
+  <div id="doneArea" style="display:none;" class="done-screen">
+    <h2 id="doneTitle">🎉 Auswahl geschafft!</h2>
+    <p id="doneText">Du hast alle Karten in dieser Auswahl als „gewusst“ markiert.</p>
+    <button class="tool-btn" id="reviewAgainBtn">Nochmal alle üben</button>
+  </div>
+</main>
+
+<footer>
+  Lokal gespeichert in diesem Browser · Fortschritt bleibt beim nächsten Öffnen erhalten<br>
+  Quellen: BAMF-Gesamtfragenkatalog „Leben in Deutschland“ · Grundgesetz · Informationsblatt fdGO der Stadt Wilhelmshaven (Anlage 1 Nds. VV-StAR)<br>
+  Namen, Preise und Termine bitte kurz vor dem Prüfungstermin nachprüfen.
+</footer>
+
+<script>
+/* Kartenformat:
+   cat = Kategorie, q = Frage, a = Antwort, hint = Merkhilfe / typischer Fehler
+   p   = Priorität:      "Häufig" | "Mittel" | "Selten"
+   l   = Schwierigkeit:  "Grund"  | "Mittel" | "Fort"                          */
+const CARDS = [
+  // ── Staatsgrundlagen ────────────────────────────────────────────────
+  {cat:"Staatsgrundlagen", q:"Wie heißt der deutsche Staat offiziell?", a:"Bundesrepublik Deutschland (BRD). Es ist eine parlamentarische Demokratie und ein Bundesstaat (Föderalismus).", p:"Häufig", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Wie heißt die deutsche Verfassung?", a:"Grundgesetz (GG), in Kraft seit dem 23. Mai 1949.", hint:"Der Name blieb, obwohl es ursprünglich als vorläufig gedacht war.", p:"Häufig", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Was ist der wichtigste Artikel des Grundgesetzes?", a:"Artikel 1: „Die Würde des Menschen ist unantastbar.“", hint:"Steht bewusst an erster Stelle und ist nicht änderbar.", p:"Häufig", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Was bedeutet „Föderalismus“?", a:"Deutschland besteht aus 16 Bundesländern mit eigenen Regierungen und Zuständigkeiten (z. B. Bildung, Polizei).", hint:"Bund + Länder teilen sich die Macht.", p:"Häufig", l:"Mittel"},
+  {cat:"Staatsgrundlagen", q:"Nenne die drei Gewalten (Gewaltenteilung).", a:"Legislative (Gesetzgebung), Exekutive (Ausführung), Judikative (Rechtsprechung).", hint:"Merksatz: Machen – Ausführen – Richten.", p:"Häufig", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Welche fünf Staatsstrukturprinzipien nennt Artikel 20 GG?", a:"Republik, Demokratie, Bundesstaat, Rechtsstaat, Sozialstaat.", hint:"Merksatz: „Re-De-Bu-Re-So“. Diese fünf sind über die Ewigkeitsklausel unveränderbar.", p:"Häufig", l:"Mittel"},
+  {cat:"Staatsgrundlagen", q:"Was bedeutet „Republik“?", a:"Das Staatsoberhaupt wird gewählt und erbt sein Amt nicht. Deutschland hat keinen König und keinen Kaiser.", p:"Mittel", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Was bedeutet „Sozialstaat“?", a:"Der Staat sorgt dafür, dass Menschen in Not abgesichert sind – über Sozialversicherungen, Sozialleistungen und den Ausgleich zwischen Arm und Reich.", p:"Häufig", l:"Grund"},
+  {cat:"Staatsgrundlagen", q:"Was bedeutet „Volkssouveränität“?", a:"Alle Staatsgewalt geht vom Volke aus (Art. 20 Abs. 2 GG). Das Volk übt sie durch Wahlen und Abstimmungen und durch gewählte Vertreter aus.", p:"Häufig", l:"Mittel"},
+  {cat:"Staatsgrundlagen", q:"Was ist eine parlamentarische Demokratie?", a:"Das Volk wählt ein Parlament, und dieses Parlament wählt und kontrolliert die Regierung. Die Regierung ist vom Vertrauen des Parlaments abhängig.", hint:"Gegenstück: die Präsidialdemokratie (z. B. USA), wo der Präsident direkt gewählt wird.", p:"Mittel", l:"Mittel"},
+  {cat:"Staatsgrundlagen", q:"Was ist eine „wehrhafte Demokratie“?", a:"Die Demokratie darf sich gegen ihre Feinde verteidigen: Parteiverbot, Vereinsverbot, Verwirkung von Grundrechten (Art. 18), Verfassungsschutz, Ewigkeitsklausel.", hint:"Lehre aus 1933: Die Weimarer Republik hatte diese Schutzmittel nicht.", p:"Mittel", l:"Fort"},
+
+  // ── Regierung ───────────────────────────────────────────────────────
+  {cat:"Regierung", q:"Wer ist der Regierungschef in Deutschland?", a:"Der Bundeskanzler / die Bundeskanzlerin. Er/sie leitet die Bundesregierung und bestimmt die Richtlinien der Politik.", p:"Häufig", l:"Grund"},
+  {cat:"Regierung", q:"Wie wird der Bundeskanzler gewählt?", a:"Der Bundestag wählt ihn, auf Vorschlag des Bundespräsidenten.", hint:"Nicht das Volk wählt direkt – häufiger Irrtum!", p:"Häufig", l:"Grund"},
+  {cat:"Regierung", q:"Was macht der Bundespräsident?", a:"Er ist das Staatsoberhaupt, vertritt Deutschland repräsentativ nach außen, hat aber kaum politische Macht.", hint:"Kanzler regiert, Präsident repräsentiert.", p:"Häufig", l:"Grund"},
+  {cat:"Regierung", q:"Wie wird der Bundespräsident gewählt und für wie lange?", a:"Von der Bundesversammlung (Bundestag + gleich viele Vertreter der Länder), für 5 Jahre, einmalige Wiederwahl möglich.", p:"Häufig", l:"Mittel"},
+  {cat:"Regierung", q:"Was ist ein Bundesministerium?", a:"Jeder Minister leitet einen Fachbereich (z. B. Finanzen, Inneres, Äußeres) als Teil der Bundesregierung, geleitet vom Kanzler.", p:"Mittel", l:"Grund"},
+  {cat:"Regierung", q:"Wer ist aktuell Bundeskanzler(in)?", a:"Friedrich Merz (CDU), im Amt seit dem 6. Mai 2025. Regierungskoalition: CDU/CSU und SPD.", hint:"Stand 14.08.2026 – vor dem Termin kurz auf bundesregierung.de prüfen. Im schriftlichen Test werden keine Namen gefragt, im Gespräch schon.", p:"Häufig", l:"Grund"},
+  {cat:"Regierung", q:"Wer ist aktuell Bundespräsident?", a:"Frank-Walter Steinmeier, seit 2017, zweite Amtszeit bis 2027.", hint:"Stand 14.08.2026 – vor dem Termin auf bundespraesident.de prüfen.", p:"Häufig", l:"Grund"},
+  {cat:"Regierung", q:"Wer ernennt die Bundesminister?", a:"Der Bundespräsident – auf Vorschlag des Bundeskanzlers. Der Kanzler sucht seine Minister selbst aus.", p:"Mittel", l:"Mittel"},
+  {cat:"Regierung", q:"Was ist die „Richtlinienkompetenz“ des Kanzlers?", a:"Der Bundeskanzler bestimmt die Grundlinien der Regierungspolitik; die Minister führen ihren Bereich innerhalb dieser Linien eigenverantwortlich (Art. 65 GG).", p:"Selten", l:"Fort"},
+  {cat:"Regierung", q:"Was ist das konstruktive Misstrauensvotum?", a:"Der Bundestag kann den Kanzler nur abwählen, indem er gleichzeitig einen Nachfolger mit der Mehrheit seiner Mitglieder wählt (Art. 67 GG).", hint:"Lehre aus der Weimarer Republik: nie ein Sturz ohne neue Mehrheit.", p:"Mittel", l:"Fort"},
+  {cat:"Regierung", q:"Was ist die Vertrauensfrage?", a:"Der Kanzler lässt den Bundestag über sein Vertrauen abstimmen. Verliert er, kann der Bundespräsident den Bundestag auflösen und Neuwahlen ansetzen (Art. 68 GG).", p:"Selten", l:"Fort"},
+
+  // ── Parlament ───────────────────────────────────────────────────────
+  {cat:"Parlament", q:"Wie heißt das deutsche Parlament?", a:"Der Bundestag. Er wird direkt vom Volk gewählt und macht die Bundesgesetze.", p:"Häufig", l:"Grund"},
+  {cat:"Parlament", q:"Was ist der Bundesrat?", a:"Die Vertretung der 16 Bundesländer auf Bundesebene. Er muss bei vielen Gesetzen mitentscheiden.", hint:"Bundestag = Volk, Bundesrat = Länder.", p:"Häufig", l:"Grund"},
+  {cat:"Parlament", q:"Wo tagt der Bundestag?", a:"Im Reichstagsgebäude in Berlin.", p:"Mittel", l:"Grund"},
+  {cat:"Parlament", q:"Wie lange dauert eine Legislaturperiode des Bundestags?", a:"4 Jahre.", p:"Häufig", l:"Grund"},
+  {cat:"Parlament", q:"Was ist die Aufgabe des Bundestags?", a:"Gesetze beschließen, den Bundeskanzler wählen und die Regierung kontrollieren.", hint:"Dazu kommen: Haushalt beschließen und über Bundeswehreinsätze entscheiden.", p:"Häufig", l:"Grund"},
+  {cat:"Parlament", q:"Wer sind die Mitglieder des Bundesrates?", a:"Mitglieder der 16 Landesregierungen. Sie werden entsandt, nicht vom Volk gewählt.", hint:"Typischer Fehler: „Der Bundesrat wird gewählt“ – nein, er wird von den Ländern beschickt.", p:"Häufig", l:"Mittel"},
+  {cat:"Parlament", q:"Wie viele Stimmen hat der Bundesrat insgesamt?", a:"69 Stimmen. Jedes Land hat je nach Einwohnerzahl 3 bis 6 Stimmen und muss geschlossen abstimmen.", p:"Mittel", l:"Mittel"},
+  {cat:"Parlament", q:"Welche fünf Verfassungsorgane hat der Bund?", a:"Bundestag, Bundesrat, Bundesregierung, Bundespräsident, Bundesverfassungsgericht.", hint:"Die Bundesversammlung kommt nur zur Wahl des Bundespräsidenten zusammen.", p:"Häufig", l:"Mittel"},
+  {cat:"Parlament", q:"Wie entsteht ein Bundesgesetz?", a:"1. Gesetzesvorschlag (Regierung, Bundestag oder Bundesrat) → 2. drei Lesungen im Bundestag mit Ausschussberatung → 3. Bundesrat → 4. Unterschrift des Bundespräsidenten → 5. Verkündung im Bundesgesetzblatt.", p:"Häufig", l:"Mittel"},
+  {cat:"Parlament", q:"Wer darf einen Gesetzentwurf einbringen?", a:"Die Bundesregierung, der Bundestag aus seiner Mitte und der Bundesrat.", hint:"Der Bundespräsident darf es nicht – er unterschreibt nur am Ende.", p:"Mittel", l:"Mittel"},
+  {cat:"Parlament", q:"Was ist der Vermittlungsausschuss?", a:"Ein gemeinsames Gremium von Bundestag und Bundesrat, das bei Streit über ein Gesetz einen Kompromiss sucht.", p:"Mittel", l:"Fort"},
+  {cat:"Parlament", q:"Was ist eine Fraktion?", a:"Der Zusammenschluss der Abgeordneten einer Partei im Parlament. Sie stimmt ihr Vorgehen ab und besetzt Ausschussplätze.", p:"Mittel", l:"Grund"},
+  {cat:"Parlament", q:"Sind Abgeordnete an Weisungen gebunden?", a:"Nein. Abgeordnete sind Vertreter des ganzen Volkes, an Aufträge und Weisungen nicht gebunden und nur ihrem Gewissen unterworfen (Art. 38 GG).", hint:"Das nennt man „freies Mandat“.", p:"Mittel", l:"Fort"},
+  {cat:"Parlament", q:"Was ist ein Untersuchungsausschuss?", a:"Ein Ausschuss des Bundestags, der mögliche Missstände in Regierung und Verwaltung aufklärt. Ein wichtiges Kontrollmittel – vor allem für die Opposition.", p:"Selten", l:"Fort"},
+
+  // ── Wahlsystem ──────────────────────────────────────────────────────
+  {cat:"Wahlsystem", q:"Wie oft wird der Bundestag gewählt?", a:"Alle 4 Jahre (Bundestagswahl).", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was ist die Erststimme?", a:"Damit wählt man den Direktkandidaten im eigenen Wahlkreis.", hint:"Erststimme = Person.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was ist die Zweitstimme?", a:"Damit wählt man eine Partei – sie entscheidet über die Sitzverteilung im Bundestag.", hint:"Zweitstimme = Partei, wichtiger als die Erststimme!", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was ist die 5-%-Hürde?", a:"Eine Partei braucht mindestens 5 % der Zweitstimmen (oder 3 Direktmandate), um in den Bundestag einzuziehen.", hint:"Verhindert Zersplitterung wie in der Weimarer Republik.", p:"Häufig", l:"Mittel"},
+  {cat:"Wahlsystem", q:"Wie nennt man das deutsche Wahlsystem?", a:"Personalisierte Verhältniswahl – eine Mischung aus Verhältniswahl und Persönlichkeitswahl.", p:"Selten", l:"Fort"},
+  {cat:"Wahlsystem", q:"Ab welchem Alter darf man wählen?", a:"Ab 18 Jahren (aktives Wahlrecht).", hint:"Ausnahmen: Europawahl und Kommunalwahl in Niedersachsen schon ab 16.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Nenne die fünf Wahlgrundsätze.", a:"Allgemein, unmittelbar, frei, gleich, geheim (Art. 38 GG).", hint:"Merksatz: „A-U-F-G-G“ – Alle Uns Freien Gehen Geheim.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was bedeutet „geheime Wahl“?", a:"Niemand darf erfahren, wie man gewählt hat. Deshalb gibt es die Wahlkabine und den Wahlumschlag.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was bedeutet „freie Wahl“?", a:"Niemand darf zur Wahl oder zu einer bestimmten Stimme gezwungen oder dafür unter Druck gesetzt werden. In Deutschland gibt es keine Wahlpflicht.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Wer darf in Deutschland den Bundestag wählen?", a:"Alle deutschen Staatsangehörigen ab 18 Jahren. Ausländische Staatsangehörige dürfen es nicht – auch nicht EU-Bürger.", hint:"Genau das ändert sich mit der Einbürgerung. Gute Antwort auf „Warum wollen Sie Deutscher werden?“.", p:"Häufig", l:"Grund"},
+  {cat:"Wahlsystem", q:"Was dürfen EU-Bürger in Deutschland wählen?", a:"Nur die Kommunalwahl und die Europawahl. Bundestag und Landtag dürfen sie nicht wählen.", p:"Mittel", l:"Mittel"},
+  {cat:"Wahlsystem", q:"Welche vier Wahlebenen gibt es?", a:"Europawahl (alle 5 Jahre), Bundestagswahl (4 Jahre), Landtagswahl (in Niedersachsen 5 Jahre), Kommunalwahl (in Niedersachsen 5 Jahre).", p:"Mittel", l:"Mittel"},
+  {cat:"Wahlsystem", q:"Was ist ein Wahlkreis?", a:"Ein regional abgegrenztes Gebiet. Wer dort die meisten Erststimmen bekommt, zieht als Direktkandidat in den Bundestag ein.", p:"Mittel", l:"Mittel"},
+  {cat:"Wahlsystem", q:"Was passiert mit den Stimmen für Parteien unter 5 %?", a:"Diese Parteien bekommen keine Sitze. Ihre Stimmen wirken sich nicht auf die Sitzverteilung aus.", p:"Selten", l:"Fort"},
+  {cat:"Wahlsystem", q:"Wie viele Abgeordnete hat der Bundestag?", a:"630 Abgeordnete – so festgelegt durch die Wahlrechtsreform, gültig seit der Wahl am 23.02.2025.", hint:"Stand 14.08.2026. Früher schwankte die Zahl durch Überhang- und Ausgleichsmandate.", p:"Selten", l:"Fort"},
+
+  // ── Parteien ────────────────────────────────────────────────────────
+  {cat:"Parteien", q:"Nenne die großen Volksparteien.", a:"CDU/CSU (christlich-konservativ) und SPD (sozialdemokratisch).", hint:"„C“ für Christlich-konservativ, „S“ für Sozial.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Was steht CDU/CSU für?", a:"Christlich Demokratische Union / Christlich-Soziale Union. Die CSU gibt es nur in Bayern, die CDU in allen anderen Bundesländern.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Was ist die politische Ausrichtung der Grünen?", a:"Schwerpunkt auf Umwelt- und Klimapolitik, gesellschaftspolitisch eher progressiv/links.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Wofür steht die FDP?", a:"Freie Demokratische Partei – liberal, betont wirtschaftliche Freiheit und geringe Staatseinmischung.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Wofür steht die AfD?", a:"Alternative für Deutschland – rechtspopulistisch/national-konservativ.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Wofür steht Die Linke?", a:"Sozialistisch/linksgerichtet, setzt sich für soziale Gerechtigkeit ein.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Was ist eine „Koalition“?", a:"Ein Bündnis mehrerer Parteien, um gemeinsam eine Regierungsmehrheit zu bilden, wenn keine Partei allein die Mehrheit hat.", p:"Häufig", l:"Grund"},
+  {cat:"Parteien", q:"Welche Aufgabe haben Parteien laut Grundgesetz?", a:"Sie wirken an der politischen Willensbildung des Volkes mit (Art. 21 GG). Ihre innere Ordnung muss demokratisch sein, und sie müssen offenlegen, woher ihr Geld kommt.", p:"Häufig", l:"Mittel"},
+  {cat:"Parteien", q:"Wer kann eine Partei in Deutschland verbieten?", a:"Nur das Bundesverfassungsgericht – nicht die Regierung, nicht der Bundestag, nicht die Polizei.", hint:"Sehr beliebte Prüfungsfrage. Antwort immer: Bundesverfassungsgericht.", p:"Häufig", l:"Mittel"},
+  {cat:"Parteien", q:"Darf jeder in Deutschland eine Partei gründen?", a:"Ja. Parteigründung ist frei (Art. 21 GG), solange die Partei demokratisch aufgebaut ist und sich nicht gegen die freiheitliche demokratische Grundordnung richtet.", p:"Mittel", l:"Mittel"},
+  {cat:"Parteien", q:"Welche Parteien sind aktuell im Bundestag vertreten?", a:"Im 21. Bundestag (gewählt am 23.02.2025): CDU/CSU, AfD, SPD, Bündnis 90/Die Grünen und Die Linke.", hint:"Stand 14.08.2026 – vor dem Termin auf bundestag.de prüfen.", p:"Mittel", l:"Grund"},
+  {cat:"Parteien", q:"Muss man einer Partei angehören, um zu wählen?", a:"Nein. Wählen darf jeder Wahlberechtigte. Eine Parteimitgliedschaft ist freiwillig und für nichts Voraussetzung.", p:"Mittel", l:"Grund"},
+
+  // ── Begriffe ────────────────────────────────────────────────────────
+  {cat:"Begriffe", q:"Was bedeutet „Demokratie“?", a:"Herrschaftsform, bei der die Macht vom Volk ausgeht (Volkssouveränität) – meist durch gewählte Vertreter.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was bedeutet „Rechtsstaat“?", a:"Der Staat selbst ist an Gesetze gebunden, alle sind vor dem Gesetz gleich, unabhängige Gerichte kontrollieren die Macht.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was ist die Opposition?", a:"Die Parteien im Bundestag, die nicht Teil der Regierung sind – sie kontrollieren und kritisieren die Regierungsarbeit.", hint:"Ihre Werkzeuge: Anfragen, Untersuchungsausschüsse, Misstrauensantrag, Klage in Karlsruhe.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was ist das Bundesverfassungsgericht?", a:"Das höchste deutsche Gericht, prüft ob Gesetze mit dem Grundgesetz vereinbar sind. Sitzt in Karlsruhe.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was sind Grundrechte?", a:"Im Grundgesetz (Art. 1–19) festgelegte Rechte, die jedem Menschen zustehen, z. B. Meinungsfreiheit, Gleichheit, Menschenwürde.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was bedeutet „Koalitionsvertrag“?", a:"Eine schriftliche Vereinbarung zwischen den Koalitionsparteien über gemeinsame politische Ziele für die Legislaturperiode.", p:"Selten", l:"Mittel"},
+  {cat:"Begriffe", q:"Was ist der Unterschied zwischen aktivem und passivem Wahlrecht?", a:"Aktives Wahlrecht = selbst wählen dürfen (ab 18). Passives Wahlrecht = selbst gewählt werden dürfen, also kandidieren.", p:"Mittel", l:"Mittel"},
+  {cat:"Begriffe", q:"Wie viele Richter hat das Bundesverfassungsgericht?", a:"16 Richter in zwei Senaten. Je zur Hälfte von Bundestag und Bundesrat mit Zweidrittelmehrheit gewählt, Amtszeit 12 Jahre, keine Wiederwahl.", p:"Selten", l:"Fort"},
+  {cat:"Begriffe", q:"Was ist eine Verfassungsbeschwerde?", a:"Jeder Mensch kann sich beim Bundesverfassungsgericht beschweren, wenn er sich durch den Staat in seinen Grundrechten verletzt sieht – nachdem er den normalen Rechtsweg ausgeschöpft hat.", p:"Mittel", l:"Fort"},
+  {cat:"Begriffe", q:"Was ist eine Diktatur?", a:"Eine Herrschaft, in der eine Person oder eine Partei allein bestimmt: keine freien Wahlen, keine Gewaltenteilung, keine Grundrechte, keine freie Presse, keine Opposition.", p:"Häufig", l:"Grund"},
+  {cat:"Begriffe", q:"Was ist Totalitarismus?", a:"Eine Herrschaft, die den Menschen vollständig einem politischen Ziel unterwirft und jeden Lebensbereich kontrolliert – Beispiele: NS-Diktatur und SED-Diktatur der DDR.", p:"Mittel", l:"Fort"},
+  {cat:"Begriffe", q:"Was ist die Verwaltung?", a:"Behörden und Ämter, die Gesetze im Alltag ausführen – vom Einwohnermeldeamt bis zum Ausländeramt. Sie gehört zur Exekutive.", p:"Mittel", l:"Grund"},
+  {cat:"Begriffe", q:"Was bedeutet „Gesetzmäßigkeit der Verwaltung“?", a:"Behörden dürfen nur handeln, wenn ein Gesetz es erlaubt. Sie können sich nichts selbst ausdenken, und sie sind an Recht und Gesetz gebunden.", p:"Häufig", l:"Mittel"},
+  {cat:"Begriffe", q:"Was bedeutet „Verhältnismäßigkeit“?", a:"Ein staatlicher Eingriff muss geeignet, erforderlich und angemessen sein. Der Staat darf nicht mit Kanonen auf Spatzen schießen.", p:"Selten", l:"Fort"},
+
+  // ── Grundgesetz & Grundrechte ───────────────────────────────────────
+  {cat:"Grundgesetz & Grundrechte", q:"Wann trat das Grundgesetz in Kraft?", a:"Am 23. Mai 1949.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Wer hat das Grundgesetz beschlossen?", a:"Der Parlamentarische Rat in Bonn, gewählt von den Landtagen der westlichen Besatzungszonen. Vorsitzender war Konrad Adenauer.", hint:"Es galt zuerst nur in Westdeutschland; seit dem 3. Oktober 1990 in ganz Deutschland.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Warum heißt es „Grundgesetz“ und nicht „Verfassung“?", a:"1949 sollte es nur vorläufig gelten, bis Deutschland wiedervereinigt ist. Der Name blieb, obwohl es heute die vollwertige Verfassung ist.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Wie lautet Artikel 1 Absatz 1 GG wörtlich?", a:"„Die Würde des Menschen ist unantastbar. Sie zu achten und zu schützen ist Verpflichtung aller staatlichen Gewalt.“", hint:"Diesen Satz auswendig können – er wird im Gespräch fast immer verlangt.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was schützt Artikel 2 GG?", a:"Die freie Entfaltung der Persönlichkeit sowie das Recht auf Leben, körperliche Unversehrtheit und Freiheit der Person.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 3 GG?", a:"Alle Menschen sind vor dem Gesetz gleich. Männer und Frauen sind gleichberechtigt. Niemand darf wegen Herkunft, Sprache, Heimat, Glauben, politischer Anschauung oder Behinderung benachteiligt werden.", hint:"Die Gleichberechtigung von Mann und Frau nicht anzuerkennen, schließt die Einbürgerung aus.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 4 GG?", a:"Glaubens-, Gewissens- und Religionsfreiheit. Jeder darf seine Religion frei ausüben – oder gar keine haben. Auch das Recht, den Kriegsdienst zu verweigern, steht hier.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 5 GG?", a:"Meinungs-, Informations-, Presse- und Rundfunkfreiheit sowie Kunst- und Wissenschaftsfreiheit. Eine Zensur findet nicht statt.", p:"Häufig", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Wo endet die Meinungsfreiheit?", a:"An den allgemeinen Gesetzen, am Jugendschutz und am Recht der persönlichen Ehre (Art. 5 Abs. 2 GG). Beleidigung, Volksverhetzung und Holocaustleugnung sind strafbar.", hint:"Typischer Fehler: „In Deutschland darf man alles sagen.“ Richtig: Man darf die Regierung frei kritisieren, aber niemanden beleidigen oder zu Hass aufstacheln.", p:"Häufig", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 6 GG?", a:"Ehe und Familie stehen unter dem besonderen Schutz des Staates. Pflege und Erziehung der Kinder sind das natürliche Recht der Eltern – und ihre Pflicht.", p:"Mittel", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was regelt Artikel 7 GG?", a:"Das Schulwesen steht unter der Aufsicht des Staates. Religionsunterricht ist an öffentlichen Schulen ordentliches Lehrfach, die Teilnahme ist aber freiwillig.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 8 GG?", a:"Versammlungsfreiheit: Man darf sich friedlich und ohne Waffen versammeln. Eine Demonstration unter freiem Himmel muss nur angemeldet, nicht genehmigt werden.", hint:"Typischer Fehler: „Man braucht eine Genehmigung.“ Nein – Anmeldung reicht.", p:"Häufig", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 9 GG?", a:"Vereinigungsfreiheit: Vereine und Gewerkschaften dürfen frei gegründet werden. Daraus folgt auch das Streikrecht.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was schützt Artikel 10 GG?", a:"Das Brief-, Post- und Fernmeldegeheimnis. Niemand darf einfach die Post oder das Telefon anderer kontrollieren.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 11 GG?", a:"Freizügigkeit: Deutsche dürfen frei entscheiden, wo in Deutschland sie wohnen und arbeiten.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 12 GG?", a:"Berufsfreiheit: Jeder darf Beruf, Arbeitsplatz und Ausbildungsstätte frei wählen. Zwangsarbeit ist verboten.", p:"Mittel", l:"Grund"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 13 GG?", a:"Die Wohnung ist unverletzlich. Eine Durchsuchung darf in der Regel nur ein Richter anordnen.", hint:"Die Polizei darf nicht einfach ohne Grund in die Wohnung.", p:"Häufig", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 14 GG?", a:"Eigentum und Erbrecht sind garantiert. Aber: „Eigentum verpflichtet“ – sein Gebrauch soll auch dem Allgemeinwohl dienen. Enteignung nur per Gesetz und gegen Entschädigung.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was regelt Artikel 16 GG?", a:"Die deutsche Staatsangehörigkeit darf nicht willkürlich entzogen werden, und Deutsche dürfen grundsätzlich nicht ans Ausland ausgeliefert werden.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was steht in Artikel 16a GG?", a:"„Politisch Verfolgte genießen Asylrecht.“ Das Asylrecht steht als Grundrecht im Grundgesetz – eine Konsequenz aus der NS-Zeit, als Deutsche selbst fliehen mussten.", p:"Häufig", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was ist das Petitionsrecht (Art. 17 GG)?", a:"Jeder darf sich mit Bitten und Beschwerden schriftlich an Behörden und an das Parlament wenden – auch ohne deutsche Staatsangehörigkeit.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was sagt Artikel 19 Absatz 4 GG?", a:"Wer durch die öffentliche Gewalt in seinen Rechten verletzt wird, kann vor Gericht gehen. Das ist die Rechtsweggarantie.", hint:"Auch gegen eine Entscheidung des Ausländeramts kann man klagen.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was sagt Artikel 20 Absatz 4 GG (Widerstandsrecht)?", a:"Gegen jeden, der die verfassungsmäßige Ordnung beseitigen will, haben alle Deutschen das Recht zum Widerstand – wenn andere Abhilfe nicht möglich ist.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was ist die Ewigkeitsklausel (Art. 79 Abs. 3 GG)?", a:"Die Menschenwürde, die Grundsätze aus Artikel 20 und die Gliederung in Bundesländer dürfen niemals geändert werden – auch nicht mit Zweidrittelmehrheit.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was ist Staatsziel nach Artikel 20a GG?", a:"Der Schutz der natürlichen Lebensgrundlagen und der Tiere – also Umwelt- und Tierschutz.", p:"Selten", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Was sagt Artikel 26 GG zum Angriffskrieg?", a:"Handlungen, die das friedliche Zusammenleben der Völker stören, insbesondere die Vorbereitung eines Angriffskriegs, sind verfassungswidrig und strafbar.", p:"Mittel", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Welche Grundrechte gelten nur für Deutsche?", a:"Vor allem Versammlungsfreiheit (Art. 8), Vereinigungsfreiheit (Art. 9), Freizügigkeit (Art. 11), Berufsfreiheit (Art. 12) und das Wahlrecht. Alle anderen gelten für jeden Menschen.", hint:"Deshalb heißt es „Jedermannrechte“ und „Deutschenrechte“.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Können Grundrechte eingeschränkt werden?", a:"Ja, die meisten – aber nur durch ein Gesetz, nur verhältnismäßig und nie in ihrem Wesensgehalt (Art. 19 Abs. 2). Die Menschenwürde aus Artikel 1 ist nie einschränkbar.", p:"Mittel", l:"Fort"},
+  {cat:"Grundgesetz & Grundrechte", q:"Wozu dienen Grundrechte?", a:"Sie schützen den Einzelnen vor dem Staat (Abwehrrecht). Zugleich muss der Staat sie schützen – auch gegen Übergriffe anderer Menschen oder Organisationen.", p:"Häufig", l:"Mittel"},
+  {cat:"Grundgesetz & Grundrechte", q:"Gilt die Todesstrafe in Deutschland?", a:"Nein. Die Todesstrafe ist abgeschafft (Art. 102 GG). Auch Folter ist absolut verboten.", p:"Häufig", l:"Grund"},
+
+  // ── fdGO & Bekenntnis ───────────────────────────────────────────────
+  {cat:"fdGO & Bekenntnis", q:"Was ist die freiheitliche demokratische Grundordnung (fdGO)?", a:"Eine Staatsform ohne Gewalt- und Willkürherrschaft. Die Staatsgewalt geht vom Volk aus und wird über gewählte Vertreter im Parlament ausgeübt. Sie ist ein Rechtsstaat, der Menschenwürde, Freiheit und Gleichheit jedes Einzelnen schützt.", hint:"Diesen Satz frei sprechen können – er ist der Kern des Bekenntnisgesprächs.", p:"Häufig", l:"Grund"},
+  {cat:"fdGO & Bekenntnis", q:"Nenne die neun Prinzipien der fdGO.", a:"Demokratie, Achtung der Grundrechte, Gewaltenteilung, Rechtsstaatsprinzip, Gesetzmäßigkeit der Verwaltung, Unabhängigkeit der Gerichte, Mehrparteienprinzip, Recht auf Opposition, Völkerverständigung.", hint:"Eselsbrücke: D-G-G-R-G-U-M-O-V.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Was bedeutet „keine Willkürherrschaft“?", a:"Der Staat darf nicht nach Belieben handeln, sondern nur nach Recht und Gesetz. Jede staatliche Maßnahme braucht eine gesetzliche Grundlage und kann vor Gericht überprüft werden.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Wozu dient die Gewaltenteilung?", a:"Zur Hemmung und Kontrolle staatlicher Macht. Beispiel: Der Bundestag beschließt ein Gesetz, die Regierung führt es aus, das Bundesverfassungsgericht kann es für nichtig erklären.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Wem sind Richter verpflichtet?", a:"Nur dem Gesetz und ihrem Gewissen. Sie sind unabhängig von Regierung und Parlament und können nicht einfach versetzt oder abgesetzt werden.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Welche Aufgabe hat die Opposition?", a:"Sie ist das Gegengewicht zur Regierung, kontrolliert und kritisiert sie und bringt eigene Gesetzentwürfe ein. Die Regierung darf sie nicht behindern.", p:"Häufig", l:"Grund"},
+  {cat:"fdGO & Bekenntnis", q:"Warum braucht eine Demokratie mehrere Parteien?", a:"Das Mehrparteienprinzip sichert Meinungsvielfalt und echte Auswahl. Alle Parteien haben die gleichen Chancen und sind frei von staatlichen Eingriffen.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Was bedeutet Völkerverständigung?", a:"Frieden zwischen Völkern und Staaten. Angriffskriege sind verfassungswidrig. Dazu gehört auch die Anerkennung des Existenzrechts Israels.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Welche drei Erklärungen unterschreibt man bei der Einbürgerung?", a:"1. Bekenntnis zur freiheitlichen demokratischen Grundordnung. 2. Bekenntnis zur besonderen historischen Verantwortung Deutschlands für die NS-Unrechtsherrschaft, besonders zum Schutz jüdischen Lebens, zum friedlichen Zusammenleben der Völker und zum Verbot des Angriffskriegs. 3. Loyalitätserklärung.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Was erklärt man mit der Loyalitätserklärung?", a:"Dass man keine Bestrebungen verfolgt oder unterstützt, die sich gegen die fdGO, gegen den Bestand oder die Sicherheit der Bundesrepublik oder gegen die Amtsführung der Verfassungsorgane richten.", p:"Mittel", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Was sind verfassungsfeindliche Bestrebungen?", a:"Aktivitäten gegen die freiheitliche demokratische Grundordnung, gegen Bestand oder Sicherheit des Staates, gegen die Amtsführung der Verfassungsorgane oder solche, die durch Gewalt auswärtige Belange gefährden.", p:"Mittel", l:"Fort"},
+  {cat:"fdGO & Bekenntnis", q:"Sind antisemitische oder rassistische Handlungen mit dem Grundgesetz vereinbar?", a:"Nein. Sie widersprechen der Menschenwürde und der Gleichheit aller Menschen. Eine entsprechende Verurteilung schließt die Einbürgerung aus.", hint:"Das ist seit der Reform vom 27.06.2024 ausdrücklich im Staatsangehörigkeitsgesetz geregelt.", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Muss das Bekenntnis ehrlich gemeint sein?", a:"Ja. Es muss „von der inneren Einstellung getragen“ sein. Ein auswendig gelerntes Lippenbekenntnis genügt rechtlich nicht.", hint:"Deshalb fragt die Behörde nach: „Was bedeutet das für Sie persönlich?“", p:"Häufig", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Muss man in Deutschland jede Partei gut finden?", a:"Nein. Man muss keine Partei mögen. Man muss aber die Ordnung akzeptieren, in der es verschiedene Parteien gibt, und Konflikte friedlich und über Wahlen austragen.", hint:"Gute Antwort auf Meinungsfragen im Gespräch – sachlich bleiben.", p:"Mittel", l:"Mittel"},
+  {cat:"fdGO & Bekenntnis", q:"Was passiert, wenn jemand früher verfassungsfeindliche Bestrebungen unterstützt hat?", a:"Eine Einbürgerung ist nur möglich, wenn die Person glaubhaft macht, dass sie sich davon abgewandt hat. Das wird von Verfassungsschutz und Staatsangehörigkeitsbehörde geprüft.", p:"Selten", l:"Fort"},
+  {cat:"fdGO & Bekenntnis", q:"Was ist der Verfassungsschutz?", a:"Ein Inlandsnachrichtendienst, der Bestrebungen gegen die freiheitliche demokratische Grundordnung beobachtet. Er hat keine Polizeibefugnisse und darf niemanden festnehmen.", p:"Selten", l:"Fort"},
+
+  // ── Geschichte ──────────────────────────────────────────────────────
+  {cat:"Geschichte", q:"Was war die Weimarer Republik?", a:"Die erste Demokratie in Deutschland, von 1919 bis 1933. Sie scheiterte an wirtschaftlichen Krisen, an radikalen Parteien und an ihren eigenen Verfassungsschwächen.", hint:"Aus ihrem Scheitern stammen 5-%-Hürde, konstruktives Misstrauensvotum und Ewigkeitsklausel.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wann kam Hitler an die Macht?", a:"Am 30. Januar 1933 wurde Adolf Hitler zum Reichskanzler ernannt. Danach wurde die Demokratie innerhalb weniger Monate beseitigt.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wie lange dauerte die nationalsozialistische Diktatur?", a:"Von 1933 bis 1945.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was kennzeichnete die NS-Diktatur?", a:"Keine freien Wahlen, keine Gewaltenteilung, keine Grundrechte, keine unabhängigen Gerichte, keine Pressefreiheit, nur eine erlaubte Partei (NSDAP), Verfolgung und Ermordung Andersdenkender und Minderheiten.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was war der Holocaust (Schoah)?", a:"Der systematische Massenmord des NS-Staates an etwa sechs Millionen europäischen Jüdinnen und Juden. Ermordet wurden außerdem Sinti und Roma, Menschen mit Behinderung, politisch Andersdenkende, Homosexuelle und Kriegsgefangene.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was geschah am 9. November 1938?", a:"Die Novemberpogrome: Synagogen wurden angezündet, jüdische Geschäfte zerstört, Menschen misshandelt, verhaftet und ermordet.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Was waren die Nürnberger Gesetze von 1935?", a:"Rassistische Gesetze, die Jüdinnen und Juden ihre Bürgerrechte entzogen und Ehen zwischen Juden und Nichtjuden verboten.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wann begann der Zweite Weltkrieg und wie?", a:"Am 1. September 1939 mit dem deutschen Überfall auf Polen.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wann endete der Zweite Weltkrieg in Europa?", a:"Am 8. Mai 1945 mit der bedingungslosen Kapitulation Deutschlands. Der Tag wird heute als Tag der Befreiung bezeichnet.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was war der 20. Juli 1944?", a:"Ein Attentatsversuch auf Hitler durch Offiziere um Claus Schenk Graf von Stauffenberg. Er scheiterte; die Beteiligten wurden hingerichtet.", hint:"Weiterer Widerstand: die „Weiße Rose“ um Hans und Sophie Scholl.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Welcher Tag ist der Gedenktag für die Opfer des Nationalsozialismus?", a:"Der 27. Januar – der Tag der Befreiung des Konzentrationslagers Auschwitz im Jahr 1945.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wie war Deutschland nach 1945 aufgeteilt?", a:"In vier Besatzungszonen: USA, Großbritannien, Frankreich und Sowjetunion. Berlin wurde ebenfalls in vier Sektoren geteilt.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Was war die Berliner Luftbrücke 1948/49?", a:"Nachdem die Sowjetunion die Landwege nach West-Berlin blockiert hatte, versorgten die Westalliierten die Stadt fast ein Jahr lang aus der Luft. Die Flugzeuge hießen im Volksmund „Rosinenbomber“.", p:"Selten", l:"Mittel"},
+  {cat:"Geschichte", q:"Welche zwei deutschen Staaten entstanden 1949?", a:"Die Bundesrepublik Deutschland (BRD) im Westen, gegründet am 23. Mai 1949, und die Deutsche Demokratische Republik (DDR) im Osten, gegründet am 7. Oktober 1949.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wer war der erste Bundeskanzler?", a:"Konrad Adenauer (CDU), Bundeskanzler von 1949 bis 1963.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wer war der erste Bundespräsident?", a:"Theodor Heuss, von 1949 bis 1959.", p:"Selten", l:"Mittel"},
+  {cat:"Geschichte", q:"Was war die DDR für ein Staat?", a:"Eine sozialistische Diktatur unter Führung der SED. Es gab keine freien Wahlen, keine freie Presse, keine Reisefreiheit; die Staatssicherheit („Stasi“) überwachte die Bevölkerung.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was geschah am 17. Juni 1953?", a:"Ein Volksaufstand in der DDR gegen die SED-Herrschaft. Er wurde mit sowjetischen Panzern niedergeschlagen.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wann wurde die Berliner Mauer gebaut?", a:"Am 13. August 1961, um die Flucht von DDR-Bürgern in den Westen zu stoppen.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wann fiel die Berliner Mauer?", a:"Am 9. November 1989 – nach den friedlichen Montagsdemonstrationen in Leipzig und anderen Städten.", hint:"Der 9. November ist ein Schicksalstag: 1918 Ausrufung der Republik, 1938 Novemberpogrome, 1989 Mauerfall.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was war die Friedliche Revolution?", a:"Die gewaltlosen Proteste in der DDR im Herbst 1989 – vor allem die Montagsdemonstrationen mit dem Ruf „Wir sind das Volk“. Sie führten zum Ende der SED-Herrschaft.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wann wurde Deutschland wiedervereinigt?", a:"Am 3. Oktober 1990. Die DDR trat der Bundesrepublik bei, das Grundgesetz gilt seitdem in ganz Deutschland.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Warum ist der 3. Oktober ein Feiertag?", a:"Er ist der Tag der Deutschen Einheit und der einzige bundesweit gesetzlich festgelegte Nationalfeiertag.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Wer war Helmut Kohl?", a:"Bundeskanzler von 1982 bis 1998, oft „Kanzler der Einheit“ genannt, weil in seine Amtszeit die Wiedervereinigung 1990 fiel.", p:"Selten", l:"Mittel"},
+  {cat:"Geschichte", q:"Wer war Willy Brandt?", a:"Bundeskanzler von 1969 bis 1974. Bekannt für seine Entspannungspolitik gegenüber Osteuropa und den Kniefall von Warschau 1970.", p:"Selten", l:"Mittel"},
+  {cat:"Geschichte", q:"Wer war die erste Bundeskanzlerin?", a:"Angela Merkel (CDU), Bundeskanzlerin von 2005 bis 2021.", p:"Mittel", l:"Grund"},
+  {cat:"Geschichte", q:"Was waren „Gastarbeiter“?", a:"Arbeitskräfte, die ab den 1950er-Jahren angeworben wurden, um in Westdeutschland zu arbeiten – u. a. aus Italien, Spanien, Griechenland, der Türkei und Jugoslawien. Viele blieben dauerhaft.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Seit wann ist Deutschland in der NATO?", a:"Die Bundesrepublik trat 1955 der NATO bei. Die NATO ist ein Verteidigungsbündnis.", p:"Selten", l:"Mittel"},
+  {cat:"Geschichte", q:"Warum steht die Menschenwürde in Artikel 1 des Grundgesetzes?", a:"Als bewusste Antwort auf die Verbrechen des Nationalsozialismus. Das Grundgesetz ist der Gegenentwurf zur Diktatur.", hint:"Kernsatz für das Bekenntnisgespräch.", p:"Häufig", l:"Mittel"},
+  {cat:"Geschichte", q:"Wann wurde der Staat Israel gegründet?", a:"Am 14. Mai 1948.", p:"Häufig", l:"Mittel"},
+  {cat:"Geschichte", q:"Worauf gründet die besondere Verantwortung Deutschlands gegenüber Israel?", a:"Auf den Verbrechen des Nationalsozialismus, insbesondere dem Holocaust an sechs Millionen Jüdinnen und Juden.", p:"Häufig", l:"Mittel"},
+  {cat:"Geschichte", q:"Ist Holocaustleugnung in Deutschland strafbar?", a:"Ja. Wer den Holocaust öffentlich leugnet oder verharmlost, macht sich strafbar (Volksverhetzung, § 130 StGB).", p:"Häufig", l:"Mittel"},
+  {cat:"Geschichte", q:"Wie heißt das Gotteshaus der Juden?", a:"Die Synagoge. Der Geistliche heißt Rabbiner, die heilige Schrift Tora, der wöchentliche Ruhetag Schabbat.", p:"Häufig", l:"Grund"},
+  {cat:"Geschichte", q:"Was ist der Zentralrat der Juden in Deutschland?", a:"Die wichtigste Vertretung der jüdischen Gemeinden in Deutschland gegenüber Politik und Öffentlichkeit.", p:"Mittel", l:"Mittel"},
+  {cat:"Geschichte", q:"Wer darf Mitglied in einem jüdischen Sportverein (Makkabi) werden?", a:"Alle Menschen – unabhängig von Religion und Herkunft.", p:"Mittel", l:"Grund"},
+  {cat:"Geschichte", q:"Was sind Stolpersteine?", a:"Kleine Messingplatten im Gehweg vor früheren Wohnhäusern von Menschen, die im Nationalsozialismus verfolgt und ermordet wurden. Sie erinnern an die Opfer an ihrem letzten selbstgewählten Wohnort.", p:"Selten", l:"Mittel"},
+
+  // ── Deutschland-Basiswissen ─────────────────────────────────────────
+  {cat:"Deutschland-Basiswissen", q:"Was ist die Hauptstadt Deutschlands?", a:"Berlin. Dort sitzen Bundestag, Bundesrat, Bundesregierung und Bundespräsident.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Welche Farben hat die deutsche Flagge?", a:"Schwarz, Rot, Gold – von oben nach unten.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie heißt die deutsche Nationalhymne?", a:"Die dritte Strophe des „Lieds der Deutschen“, sie beginnt mit „Einigkeit und Recht und Freiheit“.", hint:"Nur die dritte Strophe ist Hymne – die erste („Deutschland, Deutschland über alles“) wird nicht gesungen.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wann ist der deutsche Nationalfeiertag?", a:"Am 3. Oktober, dem Tag der Deutschen Einheit.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie viele Bundesländer hat Deutschland?", a:"16.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Nenne alle 16 Bundesländer.", a:"Baden-Württemberg, Bayern, Berlin, Brandenburg, Bremen, Hamburg, Hessen, Mecklenburg-Vorpommern, Niedersachsen, Nordrhein-Westfalen, Rheinland-Pfalz, Saarland, Sachsen, Sachsen-Anhalt, Schleswig-Holstein, Thüringen.", p:"Mittel", l:"Mittel"},
+  {cat:"Deutschland-Basiswissen", q:"Welche drei Stadtstaaten gibt es?", a:"Berlin, Hamburg und Bremen. Sie sind gleichzeitig Stadt und Bundesland.", p:"Mittel", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie viele Nachbarländer hat Deutschland?", a:"Neun: Dänemark, Niederlande, Belgien, Luxemburg, Frankreich, Schweiz, Österreich, Tschechien und Polen.", p:"Mittel", l:"Mittel"},
+  {cat:"Deutschland-Basiswissen", q:"An welche Meere grenzt Deutschland?", a:"An die Nordsee und die Ostsee.", p:"Mittel", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie heißt der höchste Berg Deutschlands?", a:"Die Zugspitze in Bayern, 2.962 Meter hoch.", p:"Selten", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie heißt die Währung in Deutschland?", a:"Der Euro. Er wurde 1999 als Buchgeld und 2002 als Bargeld eingeführt und löste die D-Mark ab.", p:"Mittel", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Wie viele Menschen leben in Deutschland?", a:"Rund 83 Millionen (Stand 2025, Statistisches Bundesamt).", hint:"Zahl ändert sich – bei destatis.de nachschauen, wenn es genau sein muss.", p:"Mittel", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Welche Staatsform hat Deutschland?", a:"Eine parlamentarische Demokratie und eine Republik – kein Königreich. Nach Art. 20 GG: ein demokratischer und sozialer Bundesstaat und ein Rechtsstaat.", p:"Häufig", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Welche Religionen sind in Deutschland am weitesten verbreitet?", a:"Das Christentum (evangelisch und katholisch), danach der Islam. Es gibt auch jüdische Gemeinden – und viele Menschen ohne Religion.", p:"Mittel", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Gibt es in Deutschland eine Staatsreligion?", a:"Nein. Der Staat ist weltanschaulich neutral. Staat und Kirche sind getrennt, aber sie arbeiten in einigen Bereichen zusammen (z. B. Kindergärten, Krankenhäuser).", p:"Häufig", l:"Mittel"},
+  {cat:"Deutschland-Basiswissen", q:"Was ist das Wappentier Deutschlands?", a:"Der Bundesadler.", p:"Selten", l:"Grund"},
+  {cat:"Deutschland-Basiswissen", q:"Welche gesetzlichen Feiertage gelten bundesweit?", a:"Nur der 3. Oktober ist bundesweit gesetzlich geregelt. Die übrigen Feiertage – Weihnachten, Ostern, Pfingsten, 1. Mai, Christi Himmelfahrt – regeln die Bundesländer.", p:"Selten", l:"Mittel"},
+  {cat:"Deutschland-Basiswissen", q:"Was ist der 1. Mai?", a:"Der Tag der Arbeit – ein gesetzlicher Feiertag. Gewerkschaften veranstalten Kundgebungen für Arbeitnehmerrechte.", p:"Mittel", l:"Grund"},
+
+  // ── Rechte & Pflichten ──────────────────────────────────────────────
+  {cat:"Rechte & Pflichten", q:"Welche Rechte bekommt man mit der deutschen Staatsangehörigkeit?", a:"Volles Wahlrecht auf allen Ebenen, das Recht selbst zu kandidieren, freien Zugang zu allen Berufen (auch Beamtenlaufbahn), Freizügigkeit in der EU, konsularischen Schutz und visumfreies Reisen in viele Länder.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Welche Pflichten hat man in Deutschland?", a:"Gesetze einhalten, Steuern zahlen, Sozialversicherungsbeiträge zahlen, Kinder zur Schule schicken, sich beim Einwohnermeldeamt anmelden, als Zeuge vor Gericht erscheinen.", hint:"Wählen ist ein Recht, keine Pflicht – ein sehr beliebter Prüfungsfehler.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Ist Wählen in Deutschland Pflicht?", a:"Nein. Die Wahl ist frei. Niemand muss wählen, und niemand darf zu einer bestimmten Stimme gezwungen werden.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Was ist die Schulpflicht?", a:"Alle Kinder müssen zur Schule gehen, in der Regel ab dem 6. Lebensjahr. Die Länder regeln die Einzelheiten; meist gilt eine Vollzeitschulpflicht von neun Jahren plus Berufsschulpflicht.", hint:"Homeschooling ist in Deutschland grundsätzlich nicht erlaubt.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Gibt es in Deutschland eine Wehrpflicht?", a:"Die allgemeine Wehrpflicht ist seit dem 1. Juli 2011 ausgesetzt – nicht abgeschafft. Der Dienst in der Bundeswehr ist derzeit freiwillig.", hint:"Zum Wehrdienst gab es zuletzt neue gesetzliche Regelungen – aktuellen Stand bei bmvg.de prüfen.", p:"Mittel", l:"Mittel"},
+  {cat:"Rechte & Pflichten", q:"Was ist ein Schöffe?", a:"Ein ehrenamtlicher Laienrichter, der gemeinsam mit Berufsrichtern über Strafsachen entscheidet. Nur deutsche Staatsangehörige können Schöffe werden.", p:"Mittel", l:"Mittel"},
+  {cat:"Rechte & Pflichten", q:"Muss man sich in Deutschland anmelden, wenn man umzieht?", a:"Ja. Innerhalb von zwei Wochen nach dem Umzug muss man sich beim Einwohnermeldeamt anmelden. Das ist Meldepflicht.", p:"Mittel", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Ab wann ist man in Deutschland volljährig?", a:"Mit 18 Jahren. Dann ist man voll geschäftsfähig, strafmündig als Erwachsener und wahlberechtigt.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Muss man einen Ausweis besitzen?", a:"Ja. Deutsche ab 16 Jahren müssen einen gültigen Personalausweis oder Reisepass besitzen. Man muss ihn aber nicht ständig bei sich tragen.", p:"Mittel", l:"Mittel"},
+  {cat:"Rechte & Pflichten", q:"Wozu zahlt man in Deutschland Steuern?", a:"Damit der Staat Schulen, Straßen, Polizei, Gerichte, Krankenhäuser, Sozialleistungen und die Verwaltung finanzieren kann.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Was ist die Lohnsteuer?", a:"Die Steuer auf das Arbeitseinkommen. Der Arbeitgeber zieht sie direkt vom Bruttolohn ab und führt sie ans Finanzamt ab.", p:"Mittel", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Wie hoch ist die Mehrwertsteuer in Deutschland?", a:"19 % im Regelsatz, 7 % ermäßigt (z. B. auf Lebensmittel und Bücher).", hint:"Stand 14.08.2026 – Steuersätze ändern sich, im Zweifel beim Finanzamt prüfen.", p:"Mittel", l:"Mittel"},
+  {cat:"Rechte & Pflichten", q:"Was tun, wenn eine Behörde falsch entschieden hat?", a:"Man kann Widerspruch einlegen und danach vor dem Verwaltungsgericht klagen. Der Rechtsweg steht jedem offen (Art. 19 Abs. 4 GG).", p:"Mittel", l:"Mittel"},
+  {cat:"Rechte & Pflichten", q:"Darf man in Deutschland die Regierung öffentlich kritisieren?", a:"Ja, jederzeit. Meinungs- und Pressefreiheit sind durch Artikel 5 GG geschützt, es gibt keine Zensur, und niemand wird dafür bestraft.", p:"Häufig", l:"Grund"},
+  {cat:"Rechte & Pflichten", q:"Darf man in Deutschland gegen die Regierung demonstrieren?", a:"Ja. Friedliche Demonstrationen ohne Waffen sind erlaubt und durch Artikel 8 GG geschützt. Sie müssen unter freiem Himmel nur angemeldet werden.", p:"Häufig", l:"Grund"},
+
+  // ── Sozialstaat & Arbeit ────────────────────────────────────────────
+  {cat:"Sozialstaat & Arbeit", q:"Welche fünf Sozialversicherungen gibt es in Deutschland?", a:"Krankenversicherung, Pflegeversicherung, Rentenversicherung, Arbeitslosenversicherung und Unfallversicherung.", hint:"Merksatz: „Kranke Pflege rentiert arbeitslos ohne Unfall.“", p:"Häufig", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Wer bezahlt die Sozialversicherungsbeiträge?", a:"In der Regel je zur Hälfte Arbeitnehmer und Arbeitgeber. Die gesetzliche Unfallversicherung zahlt der Arbeitgeber allein.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Ist die Krankenversicherung in Deutschland Pflicht?", a:"Ja. Jeder Mensch mit Wohnsitz in Deutschland muss krankenversichert sein – gesetzlich oder privat.", p:"Häufig", l:"Grund"},
+  {cat:"Sozialstaat & Arbeit", q:"Was zahlt die Rentenversicherung?", a:"Die Altersrente, außerdem Renten bei Erwerbsminderung und Hinterbliebenenrenten. Finanziert wird sie von den heute Beschäftigten (Umlageverfahren).", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist Arbeitslosengeld I?", a:"Eine Leistung der Arbeitslosenversicherung für Menschen, die zuvor sozialversicherungspflichtig gearbeitet haben. Es richtet sich nach dem früheren Verdienst und ist zeitlich begrenzt.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Wie heißt die Grundsicherung für Arbeitsuchende?", a:"Seit dem 1. Juli 2026 heißt die Leistung Grundsicherungsgeld; vorher hieß sie Bürgergeld, davor Arbeitslosengeld II („Hartz IV“).", hint:"Stand 14.08.2026. Wichtig für die Einbürgerung: Der Lebensunterhalt muss grundsätzlich ohne solche Leistungen gesichert sein.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist Kindergeld?", a:"Eine monatliche staatliche Leistung für Eltern, die es für jedes Kind bis mindestens 18 Jahre gibt – bei Ausbildung oder Studium auch länger.", p:"Mittel", l:"Grund"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist ein Tarifvertrag?", a:"Ein Vertrag zwischen Gewerkschaft und Arbeitgeberverband über Löhne, Arbeitszeit und Urlaub für eine ganze Branche.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist eine Gewerkschaft?", a:"Ein Zusammenschluss von Arbeitnehmern, der ihre Interessen gegenüber den Arbeitgebern vertritt – vor allem durch Tarifverhandlungen.", p:"Mittel", l:"Grund"},
+  {cat:"Sozialstaat & Arbeit", q:"Darf man in Deutschland streiken?", a:"Ja. Das Streikrecht folgt aus der Koalitionsfreiheit (Art. 9 Abs. 3 GG). Streiks dürfen aber nur von Gewerkschaften ausgerufen werden und nur um tarifliche Ziele gehen.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist ein Betriebsrat?", a:"Die gewählte Vertretung der Beschäftigten in einem Betrieb. Er hat Mitbestimmungsrechte, etwa bei Arbeitszeiten und Kündigungen.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Wie viel Urlaub steht mindestens zu?", a:"Gesetzlich mindestens 24 Werktage im Jahr – bei einer Fünf-Tage-Woche entspricht das 20 Arbeitstagen. Viele Tarifverträge geben mehr.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist der gesetzliche Mindestlohn?", a:"Der niedrigste erlaubte Stundenlohn. Er beträgt 13,90 € brutto (Stand 01.01.2026).", hint:"Ändert sich regelmäßig – aktuellen Wert bei der Mindestlohnkommission oder beim Zoll prüfen.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist Mutterschutz und Elternzeit?", a:"Mutterschutz: besonderer Schutz vor und nach der Geburt, mit Beschäftigungsverbot und Kündigungsschutz. Elternzeit: unbezahlte Freistellung zur Kinderbetreuung, während der man Elterngeld bekommen kann.", p:"Mittel", l:"Mittel"},
+  {cat:"Sozialstaat & Arbeit", q:"Was ist Kündigungsschutz?", a:"Schutz vor willkürlicher Entlassung. In Betrieben mit mehr als zehn Beschäftigten und nach sechs Monaten Beschäftigung braucht eine Kündigung einen gesetzlich anerkannten Grund.", p:"Selten", l:"Fort"},
+
+  // ── Alltag & Gesellschaft ───────────────────────────────────────────
+  {cat:"Alltag & Gesellschaft", q:"Sind Männer und Frauen in Deutschland gleichberechtigt?", a:"Ja, das steht in Artikel 3 des Grundgesetzes. Frauen entscheiden selbst über Beruf, Ausbildung, Partnerwahl und Kleidung.", hint:"Wer die Gleichberechtigung ablehnt, kann nicht eingebürgert werden.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Ist Gewalt in der Ehe oder Familie in Deutschland erlaubt?", a:"Nein, niemals. Häusliche Gewalt ist eine Straftat. Betroffene können die Polizei rufen (110) oder sich an ein Frauenhaus wenden.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Dürfen Eltern ihre Kinder schlagen?", a:"Nein. Kinder haben ein Recht auf gewaltfreie Erziehung (§ 1631 BGB). Körperliche Bestrafung ist verboten und strafbar.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Ist Zwangsheirat in Deutschland erlaubt?", a:"Nein. Zwangsheirat ist eine Straftat. Jeder Mensch entscheidet selbst, ob und wen er heiratet.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Dürfen zwei Männer oder zwei Frauen in Deutschland heiraten?", a:"Ja. Die „Ehe für alle“ gilt seit dem 1. Oktober 2017. Diskriminierung wegen der sexuellen Orientierung ist verboten.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Wer entscheidet in Deutschland über die Religion eines Menschen?", a:"Jeder selbst. Man darf die Religion wechseln, austreten oder ohne Religion leben. Niemand darf dazu gezwungen werden.", p:"Häufig", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Was ist eine Standesamt-Ehe?", a:"In Deutschland ist nur die Eheschließung vor dem Standesamt rechtsgültig. Eine religiöse Trauung allein hat keine rechtliche Wirkung.", p:"Mittel", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Wer bekommt nach einer Scheidung das Sorgerecht?", a:"In der Regel bleibt es bei beiden Eltern gemeinsam. Im Streitfall entscheidet das Familiengericht nach dem Wohl des Kindes.", p:"Mittel", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Welche Notrufnummern gibt es in Deutschland?", a:"110 für die Polizei, 112 für Feuerwehr und Rettungsdienst. Beide sind kostenlos.", p:"Mittel", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Wie hoch darf die Mietkaution höchstens sein?", a:"Höchstens drei Nettokaltmieten. Der Mieter darf sie in drei Raten zahlen.", p:"Mittel", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Was ist der Rundfunkbeitrag?", a:"Ein Beitrag, den jeder Haushalt für das öffentlich-rechtliche Radio und Fernsehen zahlt. Er sichert die Unabhängigkeit dieser Sender vom Staat und von Werbekunden.", hint:"Die Höhe ändert sich – aktuellen Betrag bei rundfunkbeitrag.de prüfen.", p:"Mittel", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Was ist ein Ehrenamt?", a:"Freiwillige, unbezahlte Arbeit für die Gemeinschaft – z. B. in Vereinen, bei der Freiwilligen Feuerwehr, in der Nachbarschaftshilfe. Es ist ein wichtiger Teil des gesellschaftlichen Lebens.", p:"Mittel", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Was ist die Aufgabe der Polizei in Deutschland?", a:"Sie schützt Bürger und Eigentum, verfolgt Straftaten und sorgt für Sicherheit und Ordnung. Sie ist an Gesetze gebunden und wird von Gerichten kontrolliert.", p:"Mittel", l:"Grund"},
+  {cat:"Alltag & Gesellschaft", q:"Wer darf in Deutschland Recht sprechen?", a:"Nur unabhängige, staatlich bestellte Gerichte. Private oder religiöse „Paralleljustiz“ hat keine rechtliche Wirkung.", p:"Häufig", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Was bedeutet Unschuldsvermutung?", a:"Jeder gilt als unschuldig, bis ein Gericht seine Schuld rechtskräftig festgestellt hat.", p:"Mittel", l:"Mittel"},
+  {cat:"Alltag & Gesellschaft", q:"Was ist Toleranz in der deutschen Gesellschaft?", a:"Andere Meinungen, Religionen und Lebensweisen auszuhalten und zu respektieren, solange sie die Rechte anderer nicht verletzen. Toleranz heißt nicht, alles gut finden zu müssen.", p:"Mittel", l:"Mittel"},
+
+  // ── Europa ──────────────────────────────────────────────────────────
+  {cat:"Europa", q:"Wie viele Mitgliedstaaten hat die Europäische Union?", a:"27 – seit dem Austritt Großbritanniens („Brexit“) Anfang 2020.", p:"Häufig", l:"Grund"},
+  {cat:"Europa", q:"Seit wann ist Deutschland in der EU?", a:"Deutschland gehört zu den Gründungsmitgliedern: 1957 der Europäischen Wirtschaftsgemeinschaft (Römische Verträge), daraus wurde 1993 die Europäische Union.", p:"Mittel", l:"Mittel"},
+  {cat:"Europa", q:"Wie sieht die Europaflagge aus?", a:"Zwölf goldene Sterne im Kreis auf blauem Grund. Die Zahl 12 steht für Vollkommenheit, nicht für die Zahl der Mitgliedstaaten.", p:"Mittel", l:"Grund"},
+  {cat:"Europa", q:"Wie oft wird das Europäische Parlament gewählt?", a:"Alle fünf Jahre. Die Bürger der EU-Staaten wählen es direkt.", hint:"In Deutschland darf man dabei schon ab 16 wählen.", p:"Häufig", l:"Grund"},
+  {cat:"Europa", q:"Wo hat das Europäische Parlament seinen Sitz?", a:"In Straßburg (Frankreich); weitere Arbeitsorte sind Brüssel und Luxemburg.", p:"Mittel", l:"Mittel"},
+  {cat:"Europa", q:"Was macht die Europäische Kommission?", a:"Sie schlägt EU-Gesetze vor und überwacht ihre Einhaltung – so etwas wie die „Regierung“ der EU. Sitz: Brüssel.", p:"Mittel", l:"Mittel"},
+  {cat:"Europa", q:"Was ist der Schengen-Raum?", a:"Ein Gebiet in Europa, in dem man ohne Kontrollen über die Binnengrenzen reisen kann.", p:"Mittel", l:"Grund"},
+  {cat:"Europa", q:"Was bedeutet Freizügigkeit in der EU?", a:"EU-Bürger dürfen in jedem Mitgliedstaat leben, arbeiten und studieren, ohne eine Arbeitserlaubnis zu brauchen.", p:"Häufig", l:"Grund"},
+  {cat:"Europa", q:"Was ist der Europäische Gerichtshof?", a:"Das oberste Gericht der EU mit Sitz in Luxemburg. Es sorgt dafür, dass EU-Recht in allen Mitgliedstaaten gleich ausgelegt wird.", p:"Selten", l:"Fort"},
+  {cat:"Europa", q:"Was ist der Europäische Gerichtshof für Menschenrechte?", a:"Ein Gericht in Straßburg, das über die Europäische Menschenrechtskonvention wacht. Es gehört zum Europarat – nicht zur EU.", hint:"Typische Verwechslung: Europarat ≠ Europäische Union.", p:"Selten", l:"Fort"},
+  {cat:"Europa", q:"Welche Vorteile hat die EU für die Menschen in Deutschland?", a:"Frieden zwischen den Mitgliedstaaten, freies Reisen und Arbeiten, gemeinsame Währung, gemeinsamer Binnenmarkt und gemeinsame Standards beim Verbraucherschutz.", p:"Mittel", l:"Grund"},
+
+  // ── Niedersachsen & Wilhelmshaven ───────────────────────────────────
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wie heißt die Landeshauptstadt von Niedersachsen?", a:"Hannover.", p:"Häufig", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wie heißt das Parlament von Niedersachsen?", a:"Der Niedersächsische Landtag. Er hat seinen Sitz im Leineschloss in Hannover.", p:"Häufig", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wer führt die Landesregierung in Niedersachsen?", a:"Der Ministerpräsident, gewählt vom Landtag. Aktuell Olaf Lies (SPD), seit Mai 2025.", hint:"Stand 14.08.2026 – kurz vor dem Termin prüfen.", p:"Häufig", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wie oft wird der Niedersächsische Landtag gewählt?", a:"Alle fünf Jahre. Die letzte Wahl war im Oktober 2022, die nächste regulär 2027.", p:"Mittel", l:"Mittel"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Was zeigt das Wappen von Niedersachsen?", a:"Ein weißes Pferd (Sachsenross) auf rotem Grund.", p:"Häufig", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wie viele Stimmen hat Niedersachsen im Bundesrat?", a:"Sechs – die Höchstzahl, weil das Land mehr als sieben Millionen Einwohner hat.", p:"Mittel", l:"Mittel"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Welche Aufgaben hat das Bundesland (nicht der Bund)?", a:"Schule und Bildung, Polizei, Kultur, Hochschulen und das Kommunalrecht.", p:"Häufig", l:"Mittel"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Welche Aufgaben hat die Stadt bzw. Gemeinde?", a:"Kindergärten, Müllabfuhr, örtliche Straßen, Bauleitplanung, Meldewesen, Sport- und Kultureinrichtungen.", p:"Häufig", l:"Mittel"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wie heißt das Kommunalparlament in Wilhelmshaven?", a:"Der Rat der Stadt Wilhelmshaven. Die Verwaltung leitet der Oberbürgermeister, der direkt vom Volk gewählt wird.", p:"Häufig", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Wann ist die nächste Kommunalwahl in Niedersachsen?", a:"Am 13. September 2026; notwendige Stichwahlen am 27. September 2026. In Wilhelmshaven wird gleichzeitig der Oberbürgermeister gewählt.", hint:"Quelle: Niedersächsischer Landeswahlleiter, Stand 14.08.2026.", p:"Mittel", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Ab welchem Alter darf man in Niedersachsen kommunal wählen?", a:"Ab 16 Jahren. Auch EU-Bürger dürfen an der Kommunalwahl teilnehmen.", p:"Mittel", l:"Mittel"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Was kennzeichnet Wilhelmshaven?", a:"Kreisfreie Stadt an der Jade an der Nordseeküste, größter deutscher Marinestandort und Standort des JadeWeserPort – des einzigen deutschen Tiefwasserhafens.", p:"Mittel", l:"Grund"},
+  {cat:"Niedersachsen & Wilhelmshaven", q:"Welche Behörde ist in Wilhelmshaven für die Einbürgerung zuständig?", a:"Das Ausländeramt der Stadt Wilhelmshaven, Abteilung 32-10, Rathausplatz 10 (RATRiUM, 1. Etage).", p:"Selten", l:"Grund"},
+
+  // ── Prüfung & Verfahren ─────────────────────────────────────────────
+  {cat:"Prüfung & Verfahren", q:"Wie ist der Einbürgerungstest aufgebaut?", a:"33 Fragen im Multiple-Choice-Format: 30 bundesweite Fragen und 3 Fragen zum eigenen Bundesland. Zu jeder Frage gibt es vier Antworten, davon ist genau eine richtig.", p:"Häufig", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Wie viele Fragen muss man richtig beantworten?", a:"Mindestens 17 von 33. Man hat 60 Minuten Zeit.", p:"Häufig", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Aus wie vielen Fragen besteht der Gesamtkatalog?", a:"310 Fragen sind für einen Kandidaten relevant: 300 bundesweite plus 10 zum eigenen Bundesland. Alle sind vorab beim BAMF öffentlich einsehbar.", hint:"Quelle: bamf.de, Stand 14.08.2026. Genau diese 310 Fragen lernen – im Test kommt nichts anderes dran.", p:"Häufig", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Was kostet der Einbürgerungstest?", a:"25 Euro (Stand 14.08.2026, Quelle: bamf.de).", p:"Mittel", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Wie kann man die Kenntnisse der Rechts- und Gesellschaftsordnung nachweisen?", a:"Durch den bestandenen Einbürgerungstest, durch den Test „Leben in Deutschland“ mit mindestens 17 Punkten oder durch einen deutschen Schulabschluss (Hauptschule oder höher).", p:"Mittel", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Welche Voraussetzungen gelten für die Einbürgerung?", a:"In der Regel 5 Jahre rechtmäßiger Aufenthalt, gültiger Aufenthaltstitel, geklärte Identität, gesicherter Lebensunterhalt ohne staatliche Grundsicherung, keine relevanten Vorstrafen, Deutsch auf B1-Niveau, Kenntnisse der Rechts- und Gesellschaftsordnung und das Bekenntnis zur fdGO.", hint:"Die 2024 eingeführte Einbürgerung nach 3 Jahren wurde zum 30.10.2025 wieder abgeschafft. Für Ehepartner und Kinder gelten eigene Regeln – bei der Behörde erfragen.", p:"Häufig", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Welches Sprachniveau ist für die Einbürgerung nötig?", a:"Mindestens B1 (Gemeinsamer Europäischer Referenzrahmen) – nachzuweisen z. B. durch ein Zertifikat oder einen deutschen Schulabschluss.", hint:"Achtung: Die Behörde bewertet die Sprache im Gespräch erneut, auch wenn ein B1-Zertifikat vorliegt.", p:"Häufig", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Darf man die alte Staatsangehörigkeit behalten?", a:"Seit dem 27.06.2024 wird Mehrstaatigkeit grundsätzlich hingenommen – man muss die alte Staatsangehörigkeit in der Regel nicht mehr aufgeben.", hint:"Ob der Herkunftsstaat das ebenfalls erlaubt, ist eine andere Frage – dort nachfragen.", p:"Häufig", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Welche Gründe schließen eine Einbürgerung aus?", a:"Verfassungsfeindliche Bestrebungen, antisemitische, rassistische oder sonst menschenverachtende Handlungen, die Missachtung der Gleichberechtigung von Mann und Frau, Mehrehe und bestimmte Vorstrafen.", p:"Häufig", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Was ist der Unterschied zwischen Einbürgerungstest und Bekenntnisgespräch?", a:"Der Einbürgerungstest ist eine schriftliche Multiple-Choice-Prüfung mit 33 Fragen. Das Bekenntnisgespräch ist eine persönliche Vorsprache bei der Staatsangehörigkeitsbehörde, in der geprüft wird, ob man die freiheitliche demokratische Grundordnung verstanden hat und ausreichend Deutsch spricht.", hint:"Einen eigenständigen „mündlichen Politik-Test“ gibt es nicht. Vor dem Lernen klären, welcher Termin ansteht.", p:"Häufig", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Was passiert im Bekenntnistermin außer dem Gespräch?", a:"Identitätsnachweis, Sprachzertifikat und Testzertifikat werden im Original auf Echtheit geprüft, die drei Erklärungen werden unterschrieben, und es wird ein Gebührenvorschuss erhoben.", p:"Mittel", l:"Mittel"},
+  {cat:"Prüfung & Verfahren", q:"Warum wollen Sie deutscher Staatsangehöriger werden?", a:"Persönlich und ehrlich antworten. Gute Bausteine: Deutschland ist mein Lebensmittelpunkt, hier sind meine Arbeit und meine Familie; ich möchte mitbestimmen und wählen dürfen; ich möchte die gleichen Rechte und Pflichten haben wie meine Nachbarn und Kollegen; ich teile die Werte des Grundgesetzes.", hint:"Auf keinen Fall auswendig gelernt klingen. Zwei bis drei eigene Sätze reichen – aber sie müssen echt sein.", p:"Häufig", l:"Grund"},
+  {cat:"Prüfung & Verfahren", q:"Was tun, wenn man im Gespräch eine Frage nicht versteht?", a:"Nachfragen. Das ist ausdrücklich erlaubt und kein Minuspunkt. Raten dagegen schon.", p:"Häufig", l:"Grund"},
+];
+
+const STORAGE_KEY = "pass-lernkartei-progress-v1";
+const PRIOS  = ["Häufig", "Mittel", "Selten"];
+const LEVELS = ["Grund", "Mittel", "Fort"];
+
+let known = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+let filters = { cat: "Alle", prio: "Alle", lvl: "Alle" };
+let onlyOpen = false;
+let deck = [];
+let relevant = [];
+let idx = 0;
+let flipped = false;
+
+function cardId(card) { return card.cat + "::" + card.q; }
+
+function matchesFilters(c) {
+  if (filters.cat  !== "Alle" && c.cat !== filters.cat)  return false;
+  if (filters.prio !== "Alle" && c.p   !== filters.prio) return false;
+  if (filters.lvl  !== "Alle" && c.l   !== filters.lvl)  return false;
+  return true;
+}
+
+function buildDeck() {
+  relevant = CARDS.filter(matchesFilters);
+  deck = onlyOpen ? relevant.filter(c => !known[cardId(c)]) : relevant.slice();
+  idx = 0;
+  flipped = false;
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(known));
+}
+
+function fillSelect(id, values, current) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = values.map(v => `<option value="${v}">${v}</option>`).join("");
+  sel.value = current;
+}
+
+function populateFilters() {
+  const cats = ["Alle", ...new Set(CARDS.map(c => c.cat))];
+  fillSelect("categoryFilter", cats, filters.cat);
+  fillSelect("prioFilter",  ["Alle", ...PRIOS],  filters.prio);
+  fillSelect("levelFilter", ["Alle", ...LEVELS], filters.lvl);
+  document.getElementById("prioFilter").options[0].textContent  = "Alle Prioritäten";
+  document.getElementById("levelFilter").options[0].textContent = "Alle Stufen";
+  document.getElementById("categoryFilter").options[0].textContent = "Alle Kategorien";
+}
+
+function updateProgressBar() {
+  const total = relevant.length;
+  const done = relevant.filter(c => known[cardId(c)]).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("progressLabel").textContent = `${done} / ${total} gelernt`;
+  document.getElementById("progressPercent").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+function showDone(title, text) {
+  document.getElementById("studyArea").style.display = "none";
+  const area = document.getElementById("doneArea");
+  area.style.display = "block";
+  document.getElementById("doneTitle").textContent = title;
+  document.getElementById("doneText").textContent = text;
+  document.getElementById("cardCount").textContent = "";
+  updateProgressBar();
+}
+
+function renderCard() {
+  if (relevant.length === 0) {
+    showDone("Keine Karten", "Für diese Auswahl gibt es keine Karten. Filter ändern.");
+    return;
+  }
+  if (deck.length === 0) {
+    showDone("🎉 Auswahl geschafft!", "Du hast alle Karten in dieser Auswahl als „gewusst“ markiert.");
+    return;
+  }
+
+  if (idx >= deck.length) idx = 0;
+  if (idx < 0) idx = deck.length - 1;
+
+  const card = deck[idx];
+  const el = document.getElementById("flashcard");
+  el.classList.remove("flipped");
+  flipped = false;
+
+  document.getElementById("tagFront").textContent = card.cat;
+  document.getElementById("tagBack").textContent = card.cat;
+  document.getElementById("questionText").textContent = card.q;
+  document.getElementById("answerText").textContent = card.a;
+
+  const pEl = document.getElementById("prioFront");
+  const lEl = document.getElementById("levelFront");
+  pEl.textContent = card.p;
+  pEl.className = "badge p-" + card.p;
+  lEl.textContent = card.l;
+  lEl.className = "badge l-" + card.l;
+
+  const hintBox = document.getElementById("hintBox");
+  if (card.hint) {
+    hintBox.style.display = "block";
+    hintBox.textContent = "💡 " + card.hint;
+  } else {
+    hintBox.style.display = "none";
+  }
+
+  document.getElementById("studyArea").style.display = "block";
+  document.getElementById("doneArea").style.display = "none";
+  const gelernt = known[cardId(card)] ? " · ✓ gewusst" : "";
+  document.getElementById("cardCount").textContent = `Karte ${idx + 1} von ${deck.length}${gelernt}`;
+
+  updateProgressBar();
+}
+
+function nextCard() { idx = (idx + 1) % Math.max(deck.length, 1); renderCard(); }
+function prevCard() { idx = (idx - 1 + deck.length) % Math.max(deck.length, 1); renderCard(); }
+
+function shuffleDeck() {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  idx = 0;
+  renderCard();
+}
+
+function flipCard() {
+  flipped = !flipped;
+  document.getElementById("flashcard").classList.toggle("flipped", flipped);
+}
+
+document.getElementById("flashcard").addEventListener("click", flipCard);
+
+document.getElementById("knowBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (deck.length === 0) return;
+  const card = deck[idx];
+  known[cardId(card)] = true;
+  saveProgress();
+  if (onlyOpen) {
+    deck.splice(idx, 1);
+    if (idx >= deck.length) idx = 0;
+    renderCard();
+  } else if (relevant.every(c => known[cardId(c)])) {
+    showDone("🎉 Auswahl geschafft!", "Du hast alle Karten in dieser Auswahl als „gewusst“ markiert.");
+  } else {
+    nextCard();
+  }
+});
+
+document.getElementById("againBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (deck.length === 0) return;
+  const card = deck[idx];
+  delete known[cardId(card)];
+  saveProgress();
+  nextCard();
+});
+
+document.getElementById("nextBtn").addEventListener("click", nextCard);
+document.getElementById("prevBtn").addEventListener("click", prevCard);
+document.getElementById("shuffleBtn").addEventListener("click", shuffleDeck);
+
+document.getElementById("openOnlyBtn").addEventListener("click", (e) => {
+  onlyOpen = !onlyOpen;
+  e.currentTarget.classList.toggle("active", onlyOpen);
+  buildDeck();
+  renderCard();
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Gesamten Lernfortschritt wirklich zurücksetzen?")) {
+    known = {};
+    saveProgress();
+    buildDeck();
+    renderCard();
+  }
+});
+
+document.getElementById("reviewAgainBtn").addEventListener("click", () => {
+  relevant.forEach(c => delete known[cardId(c)]);
+  saveProgress();
+  buildDeck();
+  renderCard();
+});
+
+["categoryFilter", "prioFilter", "levelFilter"].forEach(id => {
+  document.getElementById(id).addEventListener("change", (e) => {
+    if (id === "categoryFilter") filters.cat = e.target.value;
+    if (id === "prioFilter") filters.prio = e.target.value;
+    if (id === "levelFilter") filters.lvl = e.target.value;
+    buildDeck();
+    renderCard();
+  });
+});
+
+document.addEventListener("keydown", (e) => {
+  const t = e.target.tagName;
+  if (t === "SELECT" || t === "BUTTON" || t === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); flipCard(); }
+  if (e.key === "ArrowRight") nextCard();
+  if (e.key === "ArrowLeft") prevCard();
+});
+
+populateFilters();
+buildDeck();
+renderCard();
+</script>
+</body>
+</html>

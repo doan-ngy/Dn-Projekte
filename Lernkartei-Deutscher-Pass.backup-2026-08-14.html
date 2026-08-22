@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lernkartei – Deutscher Pass</title>
+<style>
+  :root {
+    --black: #1a1a1a;
+    --red: #cc3333;
+    --gold: #b8860b;
+    --bg: #faf8f5;
+    --card-bg: #ffffff;
+    --muted: #6b6b6b;
+    --green: #2e7d32;
+    --orange: #b45309;
+    --border: #e5e0d8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--black);
+    min-height: 100vh;
+  }
+  header {
+    background: var(--black);
+    color: #fff;
+    padding: 18px 20px 14px;
+    text-align: center;
+    border-bottom: 4px solid var(--red);
+  }
+  header h1 {
+    margin: 0 0 2px;
+    font-size: 1.25rem;
+    letter-spacing: 0.3px;
+  }
+  header .stripe {
+    display: flex;
+    height: 4px;
+    width: 100%;
+    max-width: 240px;
+    margin: 10px auto 0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  header .stripe span { flex: 1; }
+  header .stripe .b { background: #1a1a1a; }
+  header .stripe .r { background: #cc3333; }
+  header .stripe .g { background: #d4af37; }
+
+  main {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+  }
+
+  .progress-wrap {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .progress-bar-bg {
+    height: 8px;
+    background: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  select, button.tool-btn {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--black);
+    cursor: pointer;
+  }
+  select { flex: 1; min-width: 160px; }
+  button.tool-btn:hover { background: #f0ede7; }
+
+  .card-count {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 10px;
+  }
+
+  .flash-outer {
+    perspective: 1200px;
+    margin-bottom: 16px;
+  }
+  .flashcard {
+    position: relative;
+    min-height: 260px;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    cursor: pointer;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 14px;
+    padding: 26px 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+  }
+  .face.front {
+    background: var(--card-bg);
+  }
+  .face.back {
+    background: #fffaf0;
+    transform: rotateY(180deg);
+    border-color: #e8dcb8;
+  }
+  .tag {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--red);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .q-text {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .a-text {
+    font-size: 1.02rem;
+    line-height: 1.5;
+  }
+  .hint {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    color: var(--orange);
+    background: #fff3e0;
+    border-left: 3px solid var(--orange);
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+  .flip-hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: -8px;
+    margin-bottom: 16px;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+  }
+  .actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff;
+  }
+  .btn-nav {
+    flex: 1;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--black);
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .btn-again { background: var(--red); }
+  .btn-know { background: var(--green); }
+
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .done-screen {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .done-screen h2 { margin-top: 0; }
+
+  footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding: 10px 20px 30px;
+  }
+
+  @media (max-width: 420px) {
+    .flashcard { min-height: 300px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🇩🇪 Lernkartei – Deutscher Pass</h1>
+  <div>Grundkenntnisse der deutschen Politik</div>
+  <div class="stripe"><span class="b"></span><span class="r"></span><span class="g"></span></div>
+</header>
+
+<main>
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span id="progressLabel">0 / 0 gelernt</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </div>
+
+  <div class="controls">
+    <select id="categoryFilter"></select>
+    <button class="tool-btn" id="shuffleBtn">🔀 Mischen</button>
+    <button class="tool-btn" id="resetBtn">↺ Fortschritt zurücksetzen</button>
+  </div>
+
+  <div class="card-count" id="cardCount"></div>
+
+  <div id="studyArea">
+    <div class="flash-outer">
+      <div class="flashcard" id="flashcard">
+        <div class="face front">
+          <span class="tag" id="tagFront">Kategorie</span>
+          <div class="q-text" id="questionText">Frage</div>
+        </div>
+        <div class="face back">
+          <span class="tag" id="tagBack">Kategorie</span>
+          <div class="a-text" id="answerText">Antwort</div>
+          <div class="hint" id="hintBox" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flip-hint">Karte antippen zum Umdrehen</div>
+
+    <div class="actions">
+      <button class="btn-again" id="againBtn">✗ Nochmal üben</button>
+      <button class="btn-know" id="knowBtn">✓ Weiß ich</button>
+    </div>
+    <div class="nav-row">
+      <button class="btn-nav" id="prevBtn">← Zurück</button>
+      <button class="btn-nav" id="nextBtn">Weiter →</button>
+    </div>
+  </div>
+
+  <div id="doneArea" style="display:none;" class="done-screen">
+    <h2>🎉 Kategorie geschafft!</h2>
+    <p>Du hast alle Karten in dieser Auswahl als "gewusst" markiert.</p>
+    <button class="tool-btn" id="reviewAgainBtn">Nochmal alle üben</button>
+  </div>
+</main>
+
+<footer>Lokal gespeichert in diesem Browser · Fortschritt bleibt beim nächsten Öffnen erhalten</footer>
+
+<script>
+const CARDS = [
+  // Staatsgrundlagen
+  {cat:"Staatsgrundlagen", q:"Wie heißt der deutsche Staat offiziell?", a:"Bundesrepublik Deutschland (BRD). Es ist eine parlamentarische Demokratie und ein Bundesstaat (Föderalismus)."},
+  {cat:"Staatsgrundlagen", q:"Wie heißt die deutsche Verfassung?", a:"Grundgesetz (GG), seit 1949.", hint:"Der Name blieb, obwohl es ursprünglich als vorläufig gedacht war."},
+  {cat:"Staatsgrundlagen", q:"Was ist der wichtigste Artikel des Grundgesetzes?", a:"Artikel 1: „Die Würde des Menschen ist unantastbar.“", hint:"Steht bewusst an erster Stelle und ist nicht änderbar."},
+  {cat:"Staatsgrundlagen", q:"Was bedeutet „Föderalismus“?", a:"Deutschland besteht aus 16 Bundesländern mit eigenen Regierungen und Zuständigkeiten (z. B. Bildung, Polizei).", hint:"Bund + Länder teilen sich die Macht."},
+  {cat:"Staatsgrundlagen", q:"Nenne die drei Gewalten (Gewaltenteilung).", a:"Legislative (Gesetzgebung), Exekutive (Ausführung), Judikative (Rechtsprechung).", hint:"Merksatz: Machen – Ausführen – Richten."},
+
+  // Regierung
+  {cat:"Regierung", q:"Wer ist der Regierungschef in Deutschland?", a:"Der Bundeskanzler / die Bundeskanzlerin. Er/sie leitet die Bundesregierung und bestimmt die Richtlinien der Politik."},
+  {cat:"Regierung", q:"Wie wird der Bundeskanzler gewählt?", a:"Der Bundestag wählt ihn, auf Vorschlag des Bundespräsidenten.", hint:"Nicht das Volk wählt direkt – häufiger Irrtum!"},
+  {cat:"Regierung", q:"Was macht der Bundespräsident?", a:"Er ist das Staatsoberhaupt, vertritt Deutschland repräsentativ nach außen, hat aber kaum politische Macht.", hint:"Kanzler regiert, Präsident repräsentiert."},
+  {cat:"Regierung", q:"Wie wird der Bundespräsident gewählt und für wie lange?", a:"Von der Bundesversammlung (Bundestag + Vertreter der Länder), für 5 Jahre, einmalige Wiederwahl möglich."},
+  {cat:"Regierung", q:"Was ist ein Bundesministerium?", a:"Jeder Minister leitet einen Fachbereich (z. B. Finanzen, Inneres, Äußeres) als Teil der Bundesregierung, geleitet vom Kanzler."},
+  {cat:"Regierung", q:"Wer ist aktuell Bundeskanzler(in)?", a:"Diesen Namen unmittelbar vor dem Test aktuell recherchieren – er ändert sich und wird oft gezielt gefragt."},
+
+  // Parlament
+  {cat:"Parlament", q:"Wie heißt das deutsche Parlament?", a:"Der Bundestag. Er wird direkt vom Volk gewählt und macht die Bundesgesetze."},
+  {cat:"Parlament", q:"Was ist der Bundesrat?", a:"Die Vertretung der 16 Bundesländer auf Bundesebene. Er muss bei vielen Gesetzen mitentscheiden.", hint:"Bundestag = Volk, Bundesrat = Länder."},
+  {cat:"Parlament", q:"Wo tagt der Bundestag?", a:"Im Reichstagsgebäude in Berlin."},
+  {cat:"Parlament", q:"Wie lange dauert eine Legislaturperiode des Bundestags?", a:"4 Jahre."},
+  {cat:"Parlament", q:"Was ist die Aufgabe des Bundestags?", a:"Gesetze beschließen, den Bundeskanzler wählen und die Regierung kontrollieren."},
+
+  // Wahlsystem
+  {cat:"Wahlsystem", q:"Wie oft wird der Bundestag gewählt?", a:"Alle 4 Jahre (Bundestagswahl)."},
+  {cat:"Wahlsystem", q:"Was ist die Erststimme?", a:"Damit wählt man den Direktkandidaten im eigenen Wahlkreis.", hint:"Erststimme = Person."},
+  {cat:"Wahlsystem", q:"Was ist die Zweitstimme?", a:"Damit wählt man eine Partei – sie entscheidet über die Sitzverteilung im Bundestag.", hint:"Zweitstimme = Partei, wichtiger als die Erststimme!"},
+  {cat:"Wahlsystem", q:"Was ist die 5-%-Hürde?", a:"Eine Partei braucht mindestens 5 % der Zweitstimmen (oder 3 Direktmandate), um in den Bundestag einzuziehen.", hint:"Verhindert Zersplitterung wie in der Weimarer Republik."},
+  {cat:"Wahlsystem", q:"Wie nennt man das deutsche Wahlsystem?", a:"Personalisierte Verhältniswahl – eine Mischung aus Verhältniswahl und Persönlichkeitswahl."},
+  {cat:"Wahlsystem", q:"Ab welchem Alter darf man wählen?", a:"Ab 18 Jahren (aktives Wahlrecht)."},
+
+  // Parteien
+  {cat:"Parteien", q:"Nenne die großen Volksparteien.", a:"CDU/CSU (christlich-konservativ) und SPD (sozialdemokratisch).", hint:"„C“ für Christlich-konservativ, „S“ für Sozial."},
+  {cat:"Parteien", q:"Was steht CDU/CSU für?", a:"Christlich Demokratische Union / Christlich-Soziale Union. Die CSU gibt es nur in Bayern, die CDU in allen anderen Bundesländern."},
+  {cat:"Parteien", q:"Was ist die politische Ausrichtung der Grünen?", a:"Schwerpunkt auf Umwelt- und Klimapolitik, gesellschaftspolitisch eher progressiv/links."},
+  {cat:"Parteien", q:"Wofür steht die FDP?", a:"Freie Demokratische Partei – liberal, betont wirtschaftliche Freiheit und geringe Staatseinmischung."},
+  {cat:"Parteien", q:"Wofür steht die AfD?", a:"Alternative für Deutschland – rechtspopulistisch/national-konservativ."},
+  {cat:"Parteien", q:"Wofür steht Die Linke?", a:"Sozialistisch/linksgerichtet, setzt sich für soziale Gerechtigkeit ein."},
+  {cat:"Parteien", q:"Was ist eine „Koalition“?", a:"Ein Bündnis mehrerer Parteien, um gemeinsam eine Regierungsmehrheit zu bilden, wenn keine Partei allein die Mehrheit hat."},
+
+  // Begriffe
+  {cat:"Begriffe", q:"Was bedeutet „Demokratie“?", a:"Herrschaftsform, bei der die Macht vom Volk ausgeht (Volkssouveränität) – meist durch gewählte Vertreter."},
+  {cat:"Begriffe", q:"Was bedeutet „Rechtsstaat“?", a:"Der Staat selbst ist an Gesetze gebunden, alle sind vor dem Gesetz gleich, unabhängige Gerichte kontrollieren die Macht."},
+  {cat:"Begriffe", q:"Was ist die Opposition?", a:"Die Parteien im Bundestag, die nicht Teil der Regierung sind – sie kontrollieren und kritisieren die Regierungsarbeit."},
+  {cat:"Begriffe", q:"Was ist das Bundesverfassungsgericht?", a:"Das höchste deutsche Gericht, prüft ob Gesetze mit dem Grundgesetz vereinbar sind. Sitzt in Karlsruhe."},
+  {cat:"Begriffe", q:"Was sind Grundrechte?", a:"Im Grundgesetz (Art. 1–19) festgelegte Rechte, die jedem Menschen zustehen, z. B. Meinungsfreiheit, Gleichheit, Menschenwürde."},
+  {cat:"Begriffe", q:"Was bedeutet „Koalitionsvertrag“?", a:"Eine schriftliche Vereinbarung zwischen den Koalitionsparteien über gemeinsame politische Ziele für die Legislaturperiode."},
+  {cat:"Begriffe", q:"Was ist der Unterschied zwischen aktivem und passivem Wahlrecht?", a:"Aktives Wahlrecht = selbst wählen dürfen (ab 18). Passives Wahlrecht = selbst gewählt werden dürfen, also kandidieren."},
+];
+
+const STORAGE_KEY = "pass-lernkartei-progress-v1";
+
+let known = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+let currentCategory = "Alle";
+let deck = [];
+let idx = 0;
+let flipped = false;
+
+function cardId(card) { return card.cat + "::" + card.q; }
+
+function buildDeck() {
+  deck = CARDS.filter(c => currentCategory === "Alle" || c.cat === currentCategory);
+  idx = 0;
+  flipped = false;
+}
+
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(known));
+}
+
+function populateCategories() {
+  const cats = ["Alle", ...new Set(CARDS.map(c => c.cat))];
+  const sel = document.getElementById("categoryFilter");
+  sel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join("");
+  sel.value = currentCategory;
+}
+
+function updateProgressBar() {
+  const relevant = CARDS.filter(c => currentCategory === "Alle" || c.cat === currentCategory);
+  const total = relevant.length;
+  const done = relevant.filter(c => known[cardId(c)]).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById("progressLabel").textContent = `${done} / ${total} gelernt`;
+  document.getElementById("progressPercent").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+function renderCard() {
+  const studyArea = document.getElementById("studyArea");
+  const doneArea = document.getElementById("doneArea");
+
+  if (deck.length === 0) {
+    studyArea.style.display = "none";
+    doneArea.style.display = "block";
+    document.getElementById("cardCount").textContent = "";
+    return;
+  }
+
+  if (idx >= deck.length) idx = 0;
+  if (idx < 0) idx = deck.length - 1;
+
+  const card = deck[idx];
+  const el = document.getElementById("flashcard");
+  el.classList.remove("flipped");
+  flipped = false;
+
+  document.getElementById("tagFront").textContent = card.cat;
+  document.getElementById("tagBack").textContent = card.cat;
+  document.getElementById("questionText").textContent = card.q;
+  document.getElementById("answerText").textContent = card.a;
+
+  const hintBox = document.getElementById("hintBox");
+  if (card.hint) {
+    hintBox.style.display = "block";
+    hintBox.textContent = "💡 " + card.hint;
+  } else {
+    hintBox.style.display = "none";
+  }
+
+  studyArea.style.display = "block";
+  doneArea.style.display = "none";
+  document.getElementById("cardCount").textContent = `Karte ${idx + 1} von ${deck.length}`;
+
+  updateProgressBar();
+}
+
+function nextCard() {
+  idx++;
+  if (idx >= deck.length) idx = 0;
+  renderCard();
+}
+
+function prevCard() {
+  idx--;
+  if (idx < 0) idx = deck.length - 1;
+  renderCard();
+}
+
+function shuffleDeck() {
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  idx = 0;
+  renderCard();
+}
+
+document.getElementById("flashcard").addEventListener("click", () => {
+  flipped = !flipped;
+  document.getElementById("flashcard").classList.toggle("flipped", flipped);
+});
+
+document.getElementById("knowBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const card = deck[idx];
+  known[cardId(card)] = true;
+  saveProgress();
+  const remaining = deck.filter(c => !known[cardId(c)]);
+  if (remaining.length === 0) {
+    updateProgressBar();
+    document.getElementById("studyArea").style.display = "none";
+    document.getElementById("doneArea").style.display = "block";
+  } else {
+    nextCard();
+  }
+});
+
+document.getElementById("againBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const card = deck[idx];
+  delete known[cardId(card)];
+  saveProgress();
+  nextCard();
+});
+
+document.getElementById("nextBtn").addEventListener("click", nextCard);
+document.getElementById("prevBtn").addEventListener("click", prevCard);
+document.getElementById("shuffleBtn").addEventListener("click", shuffleDeck);
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Gesamten Lernfortschritt wirklich zurücksetzen?")) {
+    known = {};
+    saveProgress();
+    renderCard();
+  }
+});
+
+document.getElementById("reviewAgainBtn").addEventListener("click", () => {
+  const relevant = CARDS.filter(c => currentCategory === "Alle" || c.cat === currentCategory);
+  relevant.forEach(c => delete known[cardId(c)]);
+  saveProgress();
+  buildDeck();
+  renderCard();
+});
+
+document.getElementById("categoryFilter").addEventListener("change", (e) => {
+  currentCategory = e.target.value;
+  buildDeck();
+  renderCard();
+});
+
+populateCategories();
+buildDeck();
+renderCard();
+</script>
+</body>
+</html>
